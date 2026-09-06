@@ -10,4 +10,4 @@ Requisitos e critérios completos: `PRD.md`, seções 4 e 8.
 | F3 | Passeio, colisões e planta sincronizada | Percurso testado sem atravessar barreiras |
 | F4 | Materiais e elementos selecionados | Aparência melhor sem regressão de navegação |
 
-Fase atual: F0 implementada, com revisão visual pendente. Não há estrutura F1 concluída.
+Fase atual: F1 concluída (16 cômodos traçados e levantados em 3D). F3 tem passeio e colisão. F2 tem editor de pose e comparação foto/modelo, mas nenhuma das 11 fotos foi marcada ainda: todas seguem `pendente`, que é a passagem correta enquanto não houver revisão humana. Nenhuma tela foi aberta em navegador por quem construiu.

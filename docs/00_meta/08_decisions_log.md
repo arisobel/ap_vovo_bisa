@@ -20,3 +20,23 @@ O arquivo deixa de descrever um único piloto e passa a `schemaVersion 2`: parâ
 
 ## D007 — 06/09/2026 — Área impressa nem sempre é a área do contorno
 No DORMIT. 1 a área impressa (16,76 m²) equivale a 3,70 × 4,53, o retângulo livre entre dois nichos de armário; o contorno estrutural mede 19,5 m². O campo `pixels` de cada conferência guarda o que foi de fato comparado, e a evidência explica qual. Não ajustar traçado para forçar coincidência com área impressa.
+
+## D008 — 06/09/2026 — Cômodo declara se tem ou não cota impressa
+Três ambientes não têm nenhum número impresso na planta. Em vez de inventar conferência ou deixar o traçado passar calado, cada cômodo declara `verification`: `cota-impressa` exige ao menos um registro em `checks`; `sem-cota` proíbe registrar qualquer um. Cada conferência declara `confidence` `alta` ou `media`, com tolerância de 1,5% e 3,5% no teste. Média é para o TER., cujo contorno vem de traços finos de guarda-corpo e não de parede.
+
+## D009 — 06/09/2026 — Corredor gravado como dois cômodos
+Os dois tocos de parede em v=325..330 são desenho de batente, não ruído. Em vez de tratar a circulação como um espaço só, foram gravados `corredor-norte` e `corredor-sul`, ligados por um vão. Assim cada porta do apartamento tem os dois lados registrados e o teste de vãos compartilhados cobre 15 pares. Aresta sem parede continua sendo representada pela ausência da aresta em `walls`, como já era no LIVING.
+
+## D010 — 06/09/2026 — A cena recebe metros, não pixels
+`preview.ts` não importa `apartment.json` nem sabe o que é pixel: recebe cômodos já derivados e desenha. Assim a conversão de unidade fica num lugar só, `deriveApartment`, e a matemática de posicionamento das paredes fica testável sem WebGL através de `wallBlocks`. A cor do piso distingue cômodo conferido por cota impressa de cômodo `sem-cota`, para a incerteza do traçado não sumir na visualização.
+
+## D011 — 06/09/2026 — Pé-direito confirmado; colisão sai da mesma parede
+`wallHeight` = 2,70 m passa a `confirmado`, com a confirmação humana e a data registradas na evidência. Continua sendo o único parâmetro não estimado.
+
+A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha a parede: não há malha de colisão paralela, como o PRD exige para a geometria. Um bloco vira barreira apenas se cruzar a faixa de 0 a 1,80 m do corpo, o que resolve porta e janela sem caso especial. Folha de porta continua não modelada, então todo vão é atravessável.
+
+## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
+O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
+
+## D013 — 06/09/2026 — Pose amarrada ao cômodo declarado
+Uma pose só é aceita se o ponto cair dentro do contorno do `roomId` declarado, o que liga `project.json` a `apartment.json` na validação. Custo: o traçado passa a ser dependência do contrato das fotos. Ganho: some a classe inteira de erro em que a foto diz um ambiente e a câmera está em outro. Toda pose exige também evidência escrita e confiança declarada; `confirmado` é estado de revisão humana, nunca automático.

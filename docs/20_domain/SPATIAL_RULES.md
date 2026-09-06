@@ -10,4 +10,6 @@ Fonte normativa: PRD, seção 6. Implementação F0: `src/plan/spatial.ts`.
 - Azimute: 0 = −Z; 90 = +X; 180 = +Z; 270 = −X. Vetor `(sin(a),0,-cos(a))`.
 - F0 deixa escala nula até entrada explícita; depois estado proposto. Medida informada não equivale a levantamento validado.
 - Coordenadas devem estar dentro da planta. Distância deve ser finita e positiva; pontos separados por pelo menos 1 pixel.
-- F2 armazenará FOV vertical e calculará horizontal pela proporção da fotografia conforme PRD. Não há pose ou câmera de captura inferida nesta entrega.
+- Pose fotográfica: ponto em pixels da planta, altura da câmera em metros, azimute, inclinação e FOV vertical. O horizontal é derivado: `hFov = 2·atan(tan(vFov/2)·aspect)`, com o aspect da própria fotografia.
+- Câmera da pose no Three.js: rotação `YXZ` com `y = −azimute` em radianos e `x = inclinação`. Isso reproduz a direção `(sin a, 0, −cos a)` da regra de azimute, e há teste que compara as duas.
+- Nenhuma pose é inferida automaticamente. Toda pose nasce de marcação humana na planta, com evidência escrita e confiança declarada.

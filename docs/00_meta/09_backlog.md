@@ -7,17 +7,22 @@
 ## F1 — em andamento
 - Confirmar que a planta corresponde à configuração atual.
 - Obter medida real conhecida em campo; hoje toda cota vem do desenho.
-- Traçados gravados: LIVING, ESCRITÓRIO, DORMIT. 1, DORMIT. 2, COZINHA, ALMOÇO. Faltam DORMIT. EMP., ÁREA DE SERVIÇO, HALL SOCIAL, LAV., os três BH e o TER.
-- Ambientes sem área ou cota impressa (banheiros, lavabo, área de serviço, hall) não terão conferência independente; registrar isso na evidência.
-- Ligar `deriveApartment` à cena Three.js: hoje o traçado não aparece em lugar nenhum da aplicação.
+- Traçado estrutural concluído: 16 cômodos, incluindo os dois trechos de corredor. Nada mais a traçar na planta.
+- BH de serviço, LAV. e HALL SOCIAL estão gravados como `sem-cota`: traçado sem conferência independente. Revisar em campo antes de tratar como confiáveis.
+- Conferir a cena 3D em navegador: nunca foi aberta. Verificar aparência, desempenho e os botões enquadrar/vista superior/ocultar paredes.
+- Medir espessura de parede, peitoril e altura de janela em campo. O pé-direito já foi confirmado; esses quatro continuam estimados.
 - Medir espessura real de parede por banda de pixels em vez do valor global estimado de 0,15 m.
 - Revisar pé-direito antes de afirmar precisão; alturas provisórias devem ser rotuladas.
 
-## F2
-- Identificar quartos, escritório e banheiros com revisão humana.
-- Editor visual de pontos/direções, poses propostas, comparação na proporção correta e evolução de schema.
+## F2 — em andamento
+- Editor de ponto/direção, comparação na proporção da foto e schema v2: implementados.
+- Marcar as 11 fotos: nenhuma foi associada ainda. Todas continuam `pendente`.
+- Identificar quartos, escritório e banheiros com revisão humana; os nomes dos arquivos não valem como associação.
+- Revisar o editor em navegador: a marcação por dois cliques e a comparação nunca foram usadas.
 
 ## F3 / F4
-- Passeio, colisão e planta sincronizada.
+- Passeio e colisão implementados; falta revisar em navegador e sincronizar a posição do caminhante com a planta 2D.
+- Modelar folha de porta ou marcar visualmente o vão: hoje todo vão é atravessável.
+- Altura por parede, para o gradil do terraço não subir 2,70 m. O usuário já confirmou que é gradil de cerca de 1,10 m.
 - Materiais/objetos fixos após validação estrutural.
 - Medir desempenho, custo de imagens e bundle; considerar miniaturas derivadas preservando originais.

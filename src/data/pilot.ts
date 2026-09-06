@@ -1,13 +1,18 @@
 import seed from './apartment.json';
 import { pixelDistance, planToWorld, type Point, type Transform } from '../plan/spatial';
 
-export type Parameter = { value: number; status: 'estimado'; evidence: string };
+export type ParameterStatus = 'estimado' | 'confirmado';
+export type Parameter = { value: number; status: ParameterStatus; evidence: string };
 export type ParameterName = 'wallHeight' | 'wallThickness' | 'doorHeight' | 'windowBase' | 'windowHeight';
 export type Parameters = Record<ParameterName, Parameter>;
 export type Wall = { id: string; edge: number; evidence: string };
 export type Opening = { id: string; wallId: string; type: 'door' | 'window'; offsetPixels: number; widthPixels: number; base: 0 | 'windowBase'; heightParameter: 'doorHeight' | 'windowHeight'; status: 'proposto'; evidence: string };
-export type Check = { id: string; kind: 'length' | 'area'; printed: number; pixels: number; evidence: string };
-export type Room = { id: string; name: string; status: 'proposto'; evidence: string; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
+export type Confidence = 'alta' | 'media';
+export type Check = { id: string; kind: 'length' | 'area'; printed: number; pixels: number; confidence: Confidence; evidence: string };
+// Tolerância aceita por confiança. Não é margem de erro medida: é o quanto se admite de divergência antes de tratar o traçado como suspeito.
+export const checkTolerance: Record<Confidence, number> = { alta: 1.5, media: 3.5 };
+export type Verification = 'cota-impressa' | 'sem-cota';
+export type Room = { id: string; name: string; status: 'proposto'; verification: Verification; evidence: string; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
 export type Apartment = { schemaVersion: 2; planId: string; planWidth: number; planHeight: number; convention: string; parameters: Parameters; rooms: Room[] };
 export const parameterNames: ParameterName[] = ['wallHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight'];
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(`Estrutura: ${message}`); }
@@ -22,8 +27,8 @@ function validateParameters(value: unknown): Parameters {
   for (const name of parameterNames) {
     const v = record(raw[name]);
     const bounds = name === 'wallThickness' ? [.05, .6] : name === 'windowBase' ? [0, 3] : [.2, 5];
-    assert(finite(v.value, bounds[0], bounds[1]) && v.status === 'estimado' && evidence(v.evidence), `parâmetro inválido: ${name}.`);
-    parameters[name] = { value: v.value, status: 'estimado', evidence: v.evidence };
+    assert(finite(v.value, bounds[0], bounds[1]) && (v.status === 'estimado' || v.status === 'confirmado') && evidence(v.evidence), `parâmetro inválido: ${name}.`);
+    parameters[name] = { value: v.value, status: v.status, evidence: v.evidence };
   }
   return parameters;
 }
@@ -56,6 +61,7 @@ function validateContour(value: unknown, planWidth: number, planHeight: number):
 function validateRoom(value: unknown, parameters: Parameters, planWidth: number, planHeight: number): Room {
   const p = record(value);
   assert(identifier(p.id) && typeof p.name === 'string' && p.name.trim().length > 0 && p.status === 'proposto' && evidence(p.evidence), 'identificação, estado ou evidência do cômodo inválidos.');
+  assert(p.verification === 'cota-impressa' || p.verification === 'sem-cota', `verificação inválida em ${p.id}.`);
   const contour = validateContour(p.contour, planWidth, planHeight);
   assert(Array.isArray(p.walls) && p.walls.length > 0 && p.walls.length <= contour.length, `paredes inválidas em ${p.id}.`);
   const ids = new Set<string>(), edges = new Set<number>();
@@ -85,16 +91,20 @@ function validateRoom(value: unknown, parameters: Parameters, planWidth: number,
     const slots = openings.filter(o => o.wallId === wall.id).sort((a, b) => a.offsetPixels - b.offsetPixels);
     for (let i = 1; i < slots.length; i++) assert(slots[i].offsetPixels >= slots[i - 1].offsetPixels + slots[i - 1].widthPixels, 'aberturas sobrepostas.');
   }
-  assert(Array.isArray(p.checks) && p.checks.length > 0 && p.checks.length <= 16, `o cômodo ${p.id} precisa registrar ao menos uma conferência contra a planta.`);
+  assert(Array.isArray(p.checks) && p.checks.length <= 16, 'lista de conferências inválida.');
+  // Só é dispensado de conferência o cômodo que declara não ter número impresso na planta.
+  assert(p.verification === 'sem-cota' || p.checks.length > 0, `o cômodo ${p.id} declara conferência por cota impressa mas não registra nenhuma.`);
+  assert(p.verification === 'cota-impressa' || p.checks.length === 0, `o cômodo ${p.id} declara não ter cota impressa mas registra conferências.`);
   const checkIds = new Set<string>();
   const checks: Check[] = p.checks.map((item: unknown) => {
     const c = record(item);
     assert(identifier(c.id) && !checkIds.has(c.id), 'ID de conferência inválido/duplicado.');
     checkIds.add(c.id);
     assert((c.kind === 'length' || c.kind === 'area') && finite(c.printed, 1e-6, 1e4) && finite(c.pixels, 1e-6, 1e7) && evidence(c.evidence), 'conferência inválida.');
-    return { id: c.id, kind: c.kind, printed: c.printed, pixels: c.pixels, evidence: c.evidence };
+    assert(c.confidence === 'alta' || c.confidence === 'media', 'confiança da conferência inválida.');
+    return { id: c.id, kind: c.kind, printed: c.printed, pixels: c.pixels, confidence: c.confidence, evidence: c.evidence };
   });
-  return { id: p.id, name: p.name, status: 'proposto', evidence: p.evidence, contour, walls, openings, checks };
+  return { id: p.id, name: p.name, status: 'proposto', verification: p.verification, evidence: p.evidence, contour, walls, openings, checks };
 }
 
 export function validateApartment(value: unknown): Apartment {
@@ -114,6 +124,16 @@ export function validateApartment(value: unknown): Apartment {
 }
 
 export function initialApartment(): Apartment { return validateApartment(seed); }
+
+// Ponto dentro do contorno, em pixels da planta. Usado para amarrar a pose de uma foto ao cômodo declarado.
+export function containsPoint(contour: Point[], p: Point): boolean {
+  let dentro = false;
+  for (let i = 0, j = contour.length - 1; i < contour.length; j = i++) {
+    const a = contour[i], b = contour[j];
+    if ((a.v > p.v) !== (b.v > p.v) && p.u < (b.u - a.u) * (p.v - a.v) / (b.v - a.v) + a.u) dentro = !dentro;
+  }
+  return dentro;
+}
 export function findRoom(apartment: Apartment, id: string): Room {
   const room = apartment.rooms.find(r => r.id === id);
   assert(room, `cômodo desconhecido: ${id}.`);
@@ -154,7 +174,7 @@ export function deriveRoom(room: Room, parameters: Parameters, transform: Transf
     return { id: w.id, start, end, length, height: parameters.wallHeight.value, thickness: parameters.wallThickness.value, openings, pieces: wallPieces(length, parameters.wallHeight.value, openings) };
   });
   const checks = room.checks.map(c => ({ ...c, ...checkDeviation(c, transform) }));
-  return { id: room.id, name: room.name, contour, walls, checks };
+  return { id: room.id, name: room.name, verification: room.verification, contour, walls, checks };
 }
 
 export function deriveApartment(apartment: Apartment, transform: Transform) {

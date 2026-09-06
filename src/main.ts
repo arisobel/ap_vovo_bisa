@@ -1,5 +1,5 @@
 import './style.css';
-import { initialProject, parseProject, type Project, type Reference } from './data/validation';
+import { confidences, initialProject, parseProject, poseToWorld, roomOptions, validateProject, type Pose, type Project, type Reference } from './data/validation';
 import { calibrate, compareMeasurement, type Point, type Measurement } from './plan/spatial';
 
 const STORAGE = 'vovo-bisa-project-v1';
@@ -12,6 +12,14 @@ try {
 let mode: 'reference' | 'check' = 'reference';
 let selected: Point[] = [];
 let selectedPhoto: Reference | null = null;
+let scene: import('./scene/preview').PreviewHandle | null = null;
+let apartment: import('./data/pilot').Apartment | null = null;
+let derive: typeof import('./data/pilot').deriveApartment | null = null;
+let sceneInfo = '';
+let walking = false;
+let posePick: 'idle' | 'point' | 'heading' = 'idle';
+let poseDraft: { u: number; v: number } | null = null;
+let comparing = false;
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
 const fmt = (n: number, digits = 3) => n.toLocaleString('pt-BR', { maximumFractionDigits: digits });
 const title = (r: Reference) => r.id.replace(/^foto_/, '').replaceAll('_', ' ').replace(/^./, c => c.toUpperCase());
@@ -41,9 +49,10 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         </div>
       </article>
       <article class="panel visual-panel">
-        <div class="panel-heading"><div><span class="step">02</span><h2>Visualização</h2></div><button id="show-3d" hidden>Voltar à visão 3D</button><span id="visual-badge" class="badge">Próxima etapa · F1</span></div>
-        <div id="preview"><div class="preview-note"><span class="cube-icon">◇</span><p class="eyebrow">CADA MEMÓRIA TEM SEU ESPAÇO</p><h3>O apartamento começa<br>pela planta.</h3><p>Defina a escala e explore as fotos originais.<br>A estrutura 3D será construída após<br>a revisão do traçado e das medidas.</p><span class="subtle-pill">Grade ilustrativa · sem geometria do imóvel</span></div><p id="webgl-status" class="webgl-status" role="status"></p></div>
-        <div id="photo-view" hidden><div class="photo-stage"><img id="large-photo" alt=""><p id="photo-error" class="error" hidden></p></div><div class="photo-description"><p class="eyebrow">FOTOGRAFIA ORIGINAL</p><h3 id="photo-title"></h3><p id="photo-meta"></p><label for="observations">Observações da referência</label><textarea id="observations" rows="2" maxlength="5000"></textarea><button id="save-notes">Salvar observações no rascunho</button><p class="muted">Ambiente: pendente · Ponto e direção: pendentes</p></div></div>
+        <div class="panel-heading"><div><span class="step">02</span><h2>Visualização</h2></div><button id="show-3d" hidden>Voltar à visão 3D</button><span id="visual-badge" class="badge">Sem escala definida</span></div>
+        <div class="plan-tools" id="scene-tools" hidden><span id="scene-info"></span><div><button id="scene-walk" class="primary">Andar por dentro</button><button id="scene-frame">Enquadrar</button><button id="scene-top">Vista superior</button><button id="scene-walls" aria-pressed="true">Ocultar paredes</button></div></div>
+        <div id="preview"><div class="preview-note" id="preview-note"><span class="cube-icon">◇</span><p class="eyebrow">CADA MEMÓRIA TEM SEU ESPAÇO</p><h3>O apartamento começa<br>pela planta.</h3><p>Defina a escala ao lado para levantar<br>as paredes do traçado.<br>Sem escala não há metro, e sem metro<br>não há parede.</p><span class="subtle-pill">Grade ilustrativa · sem geometria do imóvel</span></div><p id="webgl-status" class="webgl-status" role="status"></p></div>
+        <div id="photo-view" hidden><div class="photo-stage" id="photo-stage"><img id="large-photo" alt=""><p id="photo-error" class="error" hidden></p></div><div class="photo-description"><p class="eyebrow">FOTOGRAFIA ORIGINAL</p><h3 id="photo-title"></h3><p id="photo-meta"></p><p id="photo-state" class="muted"></p><label for="observations">Observações da referência</label><textarea id="observations" rows="2" maxlength="5000"></textarea><button id="save-notes">Salvar observações no rascunho</button><details id="pose-editor"><summary>Ambiente, ponto e direção</summary><label for="pose-room">Ambiente</label><select id="pose-room"></select><div class="measure-row"><button id="pose-mark" type="button">Marcar ponto e direção na planta</button><button id="pose-clear" type="button">Limpar pose</button></div><p id="pose-help" class="muted"></p><div class="point-inputs"><label>Altura da câmera (m)<input id="pose-height" type="number" step="0.05" min="0.3" max="2.5"></label><label>Azimute (°)<input id="pose-heading" type="number" step="1" min="0" max="359"></label><label>Inclinação (°)<input id="pose-pitch" type="number" step="1" min="-60" max="60"></label><label>Campo vertical (°)<input id="pose-fov" type="number" step="1" min="20" max="100"></label></div><label for="pose-confidence">Confiança da associação</label><select id="pose-confidence"></select><label for="pose-evidence">Evidência (por que esta foto é deste ponto)</label><textarea id="pose-evidence" rows="2" maxlength="5000"></textarea><div class="measure-row"><button id="pose-save" class="primary" type="button">Salvar como proposta</button><button id="pose-confirm" type="button">Confirmar</button><button id="pose-compare" type="button">Comparar com o modelo</button></div></details></div></div>
         <div class="visual-footer"><span class="dot"></span><span>Uma reconstrução aproximada, guiada por evidências.</span></div>
       </article>
     </section>
@@ -83,6 +92,16 @@ function drawMarkers() {
     const text = make('text', { x: `${Math.min(p.u + 12, project.plan.width - 18)}`, y: `${Math.max(20, p.v - 12)}`, fill: '#92381f', 'font-size': '20', 'font-weight': '700', stroke: 'white', 'stroke-width': '3', 'paint-order': 'stroke' });
     text.textContent = index === 0 ? 'A' : 'B';
   });
+  const pose = poseDraft ?? (selectedPhoto?.pose ? { u: selectedPhoto.pose.u, v: selectedPhoto.pose.v } : null);
+  if (pose) {
+    make('circle', { cx: `${pose.u}`, cy: `${pose.v}`, r: '8', fill: '#244d42', stroke: 'white', 'stroke-width': '2' });
+    const grau = poseDraft && posePick === 'heading' ? null : selectedPhoto?.pose?.headingDeg;
+    if (grau !== null && grau !== undefined) {
+      const rad = grau * Math.PI / 180;
+      make('line', { x1: `${pose.u}`, y1: `${pose.v}`, x2: `${pose.u + Math.sin(rad) * 46}`, y2: `${pose.v - Math.cos(rad) * 46}`, stroke: '#244d42', 'stroke-width': '4' });
+      make('circle', { cx: `${pose.u + Math.sin(rad) * 46}`, cy: `${pose.v - Math.cos(rad) * 46}`, r: '4', fill: '#244d42' });
+    }
+  }
   ['a-u', 'a-v', 'b-u', 'b-v'].forEach((id, index) => { const p = selected[Math.floor(index / 2)]; el<HTMLInputElement>(id).value = p ? String(p[index % 2 === 0 ? 'u' : 'v']) : ''; });
   el('selection-help').textContent = selected.length === 2 ? `A (${fmt(selected[0].u, 1)}; ${fmt(selected[0].v, 1)}) → B (${fmt(selected[1].u, 1)}; ${fmt(selected[1].v, 1)}). Informe a distância real.` : selected.length === 1 ? 'Ponto A marcado. Agora selecione o ponto B.' : 'Marque A e B nas extremidades de uma medida conhecida.';
 }
@@ -91,8 +110,15 @@ svg.addEventListener('click', event => {
   if (!matrix) return;
   const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
   if (p.x < 0 || p.y < 0 || p.x > project.plan.width || p.y > project.plan.height) return;
+  const clique = { u: Math.round(p.x * 100) / 100, v: Math.round(p.y * 100) / 100 };
+  if (posePick === 'point') { poseDraft = clique; posePick = 'heading'; renderPoseHelp(); drawMarkers(); return; }
+  if (posePick === 'heading' && poseDraft) {
+    const grau = (Math.atan2(clique.u - poseDraft.u, poseDraft.v - clique.v) * 180 / Math.PI + 360) % 360;
+    el<HTMLInputElement>('pose-heading').value = String(Math.round(grau));
+    posePick = 'idle'; renderPoseHelp(); drawMarkers(); return;
+  }
   if (selected.length === 2) selected = [];
-  selected.push({ u: Math.round(p.x * 100) / 100, v: Math.round(p.y * 100) / 100 }); drawMarkers();
+  selected.push(clique); drawMarkers();
 });
 el('use-coordinates').onclick = () => {
   const values = ['a-u', 'a-v', 'b-u', 'b-v'].map(id => el<HTMLInputElement>(id).valueAsNumber);
@@ -120,6 +146,7 @@ function renderCalibration() {
     const result = compareMeasurement(c.check, c.transform);
     el('check-result').textContent = `Conferência: ${fmt(result.measuredMeters)} m na escala × ${fmt(c.check.distanceMeters)} m informados. Desvio: ${fmt(result.deviationMeters)} m (${fmt(result.deviationPercent, 2)}%). A imagem não foi deformada. Confira preferencialmente uma cota em outro eixo.`;
   } else if (c) el('check-result').textContent = 'Conferência pendente. Selecione “2. Conferir outra cota”, de preferência em outro eixo.';
+  renderScene();
 }
 el('calibrate-form').onsubmit = event => {
   event.preventDefault();
@@ -134,15 +161,101 @@ el('calibrate-form').onsubmit = event => {
   } catch (error) { notify((error as Error).message, true); }
 };
 
+const ESTADOS: Record<string, string> = { pendente: 'pendente', proposto: 'proposta', confirmado: 'confirmada' };
+const rotuloConfianca: Record<string, string> = { baixa: 'baixa', media: 'media', alta: 'alta' };
+
+function renderPoseHelp() {
+  el('pose-help').textContent = posePick === 'point'
+    ? 'Clique na planta o ponto onde a camera estava.'
+    : posePick === 'heading'
+      ? 'Agora clique para onde ela apontava. A seta vai do ponto ate esse clique.'
+      : poseDraft
+        ? `Ponto marcado em (${fmt(poseDraft.u, 1)}; ${fmt(poseDraft.v, 1)}). Revise os campos e salve.`
+        : 'Nenhum ponto novo marcado. O que estiver salvo aparece na planta em verde.';
+  el('pose-mark').textContent = posePick === 'idle' ? 'Marcar ponto e direcao na planta' : 'Cancelar marcacao';
+}
+
+function renderPoseEditor() {
+  const photo = selectedPhoto;
+  if (!photo) return;
+  el('photo-state').textContent = photo.roomId
+    ? `Ambiente: ${roomOptions.find(r => r.id === photo.roomId)?.name ?? photo.roomId} - associacao ${ESTADOS[photo.status]}${photo.pose ? `, confianca ${photo.pose.confidence}` : ', sem ponto marcado'}`
+    : 'Ambiente: pendente - ponto e direcao: pendentes';
+  el<HTMLSelectElement>('pose-room').value = photo.roomId ?? '';
+  const p = photo.pose;
+  el<HTMLInputElement>('pose-height').value = String(p?.cameraHeight ?? 1.55);
+  el<HTMLInputElement>('pose-heading').value = String(p?.headingDeg ?? 0);
+  el<HTMLInputElement>('pose-pitch').value = String(p?.pitchDeg ?? 0);
+  el<HTMLInputElement>('pose-fov').value = String(p?.verticalFovDeg ?? 55);
+  el<HTMLSelectElement>('pose-confidence').value = p?.confidence ?? 'baixa';
+  el<HTMLTextAreaElement>('pose-evidence').value = p?.evidence ?? '';
+  el<HTMLButtonElement>('pose-compare').disabled = !p || !project.calibration;
+  el<HTMLButtonElement>('pose-confirm').disabled = !p;
+  renderPoseHelp();
+  drawMarkers();
+}
+
+// Monta a foto alterada, valida o projeto inteiro e so entao troca o estado: mesma regra da importacao.
+function updatePhoto(id: string, changes: Partial<Reference>, message: string) {
+  const candidate = structuredClone(project) as Project;
+  const target = candidate.photos.find(item => item.id === id);
+  if (!target) return;
+  Object.assign(target, changes);
+  try {
+    project = validateProject(candidate);
+    selectedPhoto = project.photos.find(item => item.id === id) ?? null;
+    renderPhotos(); renderPoseEditor(); persist(message);
+  } catch (error) { notify(`Alteracao recusada. O estado anterior foi preservado. ${(error as Error).message}`, true); }
+}
+
+function poseFromForm(): Pose {
+  const ponto = poseDraft ?? (selectedPhoto?.pose ? { u: selectedPhoto.pose.u, v: selectedPhoto.pose.v } : null);
+  if (!ponto) throw new Error('Marque o ponto da camera na planta antes de salvar.');
+  const numero = (id: string) => el<HTMLInputElement>(id).valueAsNumber;
+  return {
+    u: ponto.u, v: ponto.v,
+    cameraHeight: numero('pose-height'), headingDeg: numero('pose-heading'),
+    pitchDeg: numero('pose-pitch'), verticalFovDeg: numero('pose-fov'),
+    confidence: el<HTMLSelectElement>('pose-confidence').value as Pose['confidence'],
+    evidence: el<HTMLTextAreaElement>('pose-evidence').value,
+  };
+}
+
+function savePose(status: 'proposto' | 'confirmado') {
+  if (!selectedPhoto) return;
+  const roomId = el<HTMLSelectElement>('pose-room').value || null;
+  try {
+    const pose = poseFromForm();
+    poseDraft = null;
+    updatePhoto(selectedPhoto.id, { roomId, pose, status }, status === 'confirmado'
+      ? 'Pose confirmada e salva no rascunho. Exporte o JSON para guardar no projeto.'
+      : 'Pose salva como proposta. Compare com o modelo antes de confirmar.');
+  } catch (error) { notify((error as Error).message, true); }
+}
+
+function setComparing(on: boolean) {
+  const photo = selectedPhoto;
+  comparing = on && !!photo?.pose && !!project.calibration;
+  el('photo-stage').hidden = comparing;
+  el('preview').hidden = !comparing;
+  el('preview').style.aspectRatio = comparing && photo ? `${photo.width} / ${photo.height}` : '';
+  el('preview').style.minHeight = comparing ? '0' : '';
+  el('pose-compare').textContent = comparing ? 'Voltar a foto' : 'Comparar com o modelo';
+  if (comparing && photo?.pose && project.calibration) scene?.viewFromPose(poseToWorld(photo.pose, project.calibration.transform));
+  else scene?.viewFromPose(null);
+}
+
 function showPhoto(photo: Reference) {
   selectedPhoto = photo;
-  el('preview').hidden = true; el('photo-view').hidden = false; el('show-3d').hidden = false; el('visual-badge').hidden = true;
+  posePick = 'idle'; poseDraft = null; setComparing(false);
+  el('preview').hidden = true; el('photo-view').hidden = false; el('show-3d').hidden = false; el('visual-badge').hidden = true; el('scene-tools').hidden = true;
   const img = el<HTMLImageElement>('large-photo'); img.hidden = false; img.alt = `Referência original: ${title(photo)}`;
   el('photo-error').hidden = true; el('photo-error').textContent = `Imagem indisponível: ${photo.path}`; img.src = asset(photo.path);
   el('photo-title').textContent = title(photo);
   el('photo-meta').textContent = `${photo.id}.png · ${photo.width} × ${photo.height} px`;
   el<HTMLTextAreaElement>('observations').value = photo.observations;
   document.querySelectorAll<HTMLButtonElement>('.photo-card').forEach(button => { button.setAttribute('aria-pressed', String(button.dataset.id === photo.id)); });
+  renderPoseEditor();
 }
 imageFailure(el<HTMLImageElement>('large-photo'), el('photo-error'));
 el('save-notes').onclick = () => {
@@ -150,7 +263,22 @@ el('save-notes').onclick = () => {
   selectedPhoto.observations = el<HTMLTextAreaElement>('observations').value;
   persist('Observações salvas no rascunho local. Exporte o JSON para guardar no projeto.');
 };
-el('show-3d').onclick = () => { el('preview').hidden = false; el('photo-view').hidden = true; el('show-3d').hidden = true; el('visual-badge').hidden = false; selectedPhoto = null; document.querySelectorAll('.photo-card').forEach(b => b.setAttribute('aria-pressed', 'false')); };
+el('show-3d').onclick = () => {
+  setComparing(false);
+  el('preview').hidden = false; el('photo-view').hidden = true; el('show-3d').hidden = true; el('visual-badge').hidden = false;
+  selectedPhoto = null; posePick = 'idle'; poseDraft = null;
+  el('scene-tools').hidden = !project.calibration;
+  document.querySelectorAll('.photo-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  drawMarkers();
+};
+el<HTMLSelectElement>('pose-room').append(...[{ id: '', name: 'Sem ambiente definido' }, ...roomOptions].map(r => new Option(r.name, r.id)));
+el<HTMLSelectElement>('pose-confidence').append(...confidences.map(c => new Option(c, c)));
+el('pose-mark').onclick = () => { posePick = posePick === 'idle' ? 'point' : 'idle'; if (posePick === 'point') poseDraft = null; renderPoseHelp(); drawMarkers(); };
+el('pose-save').onclick = () => savePose('proposto');
+el('pose-confirm').onclick = () => savePose('confirmado');
+el('pose-compare').onclick = () => setComparing(!comparing);
+el<HTMLSelectElement>('pose-room').onchange = () => { if (selectedPhoto && !selectedPhoto.pose) updatePhoto(selectedPhoto.id, { roomId: el<HTMLSelectElement>('pose-room').value || null }, 'Ambiente associado no rascunho.'); };
+el('pose-clear').onclick = () => { if (selectedPhoto) { poseDraft = null; posePick = 'idle'; updatePhoto(selectedPhoto.id, { pose: null, status: 'pendente' }, 'Pose removida. O ambiente associado foi mantido.'); } };
 function renderPhotos() {
   const host = el('photos'); host.replaceChildren();
   const sorted = [...project.photos].sort((a, b) => Number(!a.id.includes('sala')) - Number(!b.id.includes('sala')) || a.id.localeCompare(b.id));
@@ -162,7 +290,9 @@ function renderPhotos() {
     imageFailure(img, error); frame.append(img, error);
     const number = document.createElement('span'); number.className = 'photo-number'; number.textContent = String(index + 1).padStart(2, '0'); frame.append(number);
     const name = document.createElement('strong'); name.textContent = title(photo);
-    const state = document.createElement('span'); state.className = 'photo-state'; state.textContent = '○ Associação pendente';
+    const state = document.createElement('span'); state.className = 'photo-state';
+    state.textContent = photo.status === 'confirmado' ? '● Confirmada' : photo.status === 'proposto' ? '◐ Proposta' : photo.roomId ? '○ Ambiente definido' : '○ Associação pendente';
+    state.dataset.status = photo.status;
     button.append(frame, name, state); button.onclick = () => { showPhoto(photo); el('photo-title').scrollIntoView({ block: 'nearest', behavior: 'instant' }); }; host.append(button);
   });
 }
@@ -185,4 +315,45 @@ el<HTMLInputElement>('file').onchange = async event => {
 };
 renderPhotos(); renderCalibration(); changeMode('reference');
 if (startupMessage) notify(startupMessage);
-import('./scene/preview').then(({ mountPreview }) => mountPreview(el('preview'), message => { el('webgl-status').textContent = message; })).catch(() => { el('webgl-status').textContent = 'Visualização 3D indisponível. A planta e o catálogo continuam disponíveis.'; });
+
+// A cena só existe depois da escala: sem metros por pixel não há como levantar parede alguma.
+function renderScene() {
+  if (!scene) return;
+  const transform = project.calibration?.transform ?? null;
+  const rooms = transform && apartment && derive ? derive(apartment, transform) : null;
+  scene.show(rooms);
+  el('scene-tools').hidden = !rooms || !!selectedPhoto;
+  el('preview-note').hidden = !!rooms;
+  el('visual-badge').textContent = rooms ? `${rooms.length} cômodos · traçado proposto` : 'Sem escala definida';
+  if (rooms) {
+    sceneInfo = `${rooms.length} cômodos a ${fmt(project.calibration!.transform.metersPerPixel, 6)} m/px. Pé-direito 2,70 m confirmado; espessura de parede ainda estimada.`;
+    el('scene-info').textContent = sceneInfo;
+  }
+}
+Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview, pilot]) => {
+  apartment = pilot.initialApartment();
+  derive = pilot.deriveApartment;
+  scene = preview.mountPreview(el('preview'), message => { el('webgl-status').textContent = message; });
+  scene.setWalkListener(ativo => {
+    walking = ativo;
+    el('scene-walk').textContent = ativo ? 'Sair do passeio (Esc)' : 'Andar por dentro';
+    el('scene-walk').classList.toggle('primary', !ativo);
+    for (const id of ['scene-frame', 'scene-top', 'scene-walls']) el<HTMLButtonElement>(id).disabled = ativo;
+    el('scene-info').textContent = ativo
+      ? 'Passeio: W A S D ou setas para andar, mouse para olhar, Shift para acelerar, Esc para sair. Olhos a 1,60 m do piso.'
+      : sceneInfo;
+  });
+  el('scene-walk').onclick = () => (walking ? scene?.exitWalk() : scene?.enterWalk());
+  el('scene-frame').onclick = () => scene?.frame();
+  el('scene-top').onclick = () => scene?.lookFromTop();
+  el('scene-walls').onclick = () => {
+    const button = el('scene-walls');
+    const visible = button.getAttribute('aria-pressed') !== 'true';
+    button.setAttribute('aria-pressed', String(visible));
+    button.textContent = visible ? 'Ocultar paredes' : 'Mostrar paredes';
+    scene?.setWallsVisible(visible);
+  };
+  renderScene();
+}).catch(error => {
+  el('webgl-status').textContent = `Visualização 3D indisponível. A planta e o catálogo continuam disponíveis. ${(error as Error).message}`;
+});

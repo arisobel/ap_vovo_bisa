@@ -1,5 +1,9 @@
 # Progresso
 
+## 06/09/2026 — Instalação recuperada após EPERM
+
+O usuário encontrou `EPERM / unlink` no binding nativo do Rolldown ao executar `npm ci`. O servidor Vite deixado pela sessão anterior continuava ativo. Foi encerrado somente o processo Vite deste projeto, identificado pelo caminho e linha de comando; em seguida `npm ci` concluiu com sucesso (47 pacotes instalados). README atualizado para orientar Ctrl+C antes de reinstalar. Servidor deixado parado para o usuário iniciar no próprio terminal com `npm run dev`. Próximo passo de validação F0 permanece o roteiro manual.
+
 ## 06/09/2026 — F0 implementada; revisão visual pendente
 
 Entregue:

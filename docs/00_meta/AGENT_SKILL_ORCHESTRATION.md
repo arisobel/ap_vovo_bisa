@@ -5,7 +5,7 @@
 1. Contrato: `AGENT_SKILL_PROJECT.md`.
 2. Progresso: `07_progress.md`; backlog: `09_backlog.md`.
 3. Requisitos: `../10_product/PRD.md`; sequência: `../10_product/MVP_ROADMAP.md`.
-4. Blueprint ativo: `../40_delivery/F0_BLUEPRINT.md`.
+4. Blueprint ativo: `../40_delivery/F1_BLUEPRINT.md` (piloto living); manter os recursos F0.
 5. Regras espaciais: `../20_domain/SPATIAL_RULES.md`; arquitetura e dados em `../30_architecture/`.
 
 Registre decisões em `08_decisions_log.md` e somente problemas observados em `KNOWN_ISSUES.md`. Não crie fontes concorrentes.

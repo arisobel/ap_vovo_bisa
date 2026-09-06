@@ -4,6 +4,8 @@ Base local da visita 3D: planta original interativa, calibração por dois ponto
 
 ## Executar
 
+No Windows, encerre o servidor com **Ctrl+C** no terminal de `npm run dev` antes de executar `npm ci`. O Vite pode manter o arquivo nativo do Rolldown em uso, causando `EPERM / unlink` durante a reinstalação. Depois da instalação, inicie novamente com `npm run dev`. Não é necessário repetir `npm ci` a cada abertura do aplicativo.
+
 Use Node.js 24 LTS e npm. Ambiente verificado: Node 24.19.0 e npm 11.17.0, Windows. O lockfile registra as versões instaladas. Requisitos do Vite: [guia oficial](https://vite.dev/guide/); os requisitos adicionais de Vitest estão refletidos em `package.json`.
 
 ```powershell

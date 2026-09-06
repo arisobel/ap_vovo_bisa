@@ -1,0 +1,28 @@
+{
+  "id": "living-pilot",
+  "name": "LIVING",
+  "status": "proposto",
+  "evidence": "docs/90_references/planta_apartamento.jpeg: contorno interno do LIVING com recorte do hall. Limite norte em v=501 é corte aberto do piloto para circulação, não parede. Faces internas aproximadas pela resolução de 506 × 854 px.",
+  "contour": [{"u":52,"v":631},{"u":230,"v":631},{"u":230,"v":501},{"u":269,"v":501},{"u":269,"v":516},{"u":395,"v":516},{"u":395,"v":761},{"u":52,"v":761}],
+  "parameters": {
+    "wallHeight": {"value":2.7,"status":"estimado","evidence":"Pé-direito não fornecido. Valor provisório para inspeção."},
+    "wallThickness": {"value":0.15,"status":"estimado","evidence":"Espessura não medida; parede projetada para fora do contorno interno."},
+    "doorHeight": {"value":2.1,"status":"estimado","evidence":"Altura de passagem provisória; fotos não permitem medida precisa."},
+    "windowBase": {"value":0.9,"status":"estimado","evidence":"Peitoril provisório, sem medição física."},
+    "windowHeight": {"value":1.2,"status":"estimado","evidence":"Altura de janela provisória, sem medição física."}
+  },
+  "walls": [
+    {"id":"living-almoco","edge":0,"evidence":"Divisória com ALMOÇO; símbolo de porta aproximadamente u=91..122."},
+    {"id":"living-hall","edge":1,"evidence":"Face junto ao hall/elevador; recorte preservado."},
+    {"id":"living-office-return","edge":3,"evidence":"Retorno curto da divisória do escritório; limite do piloto."},
+    {"id":"living-office","edge":4,"evidence":"Divisória sul do ESCRITÓRIO."},
+    {"id":"living-east","edge":5,"evidence":"Parede direita contínua na planta."},
+    {"id":"living-south","edge":6,"evidence":"Fachada inferior: janela u=55..120 e acesso ao terraço u=306..360. Conferir em campo."},
+    {"id":"living-west","edge":7,"evidence":"Parede esquerda do living abaixo do ALMOÇO."}
+  ],
+  "openings": [
+    {"id":"door-almoco","wallId":"living-almoco","type":"door","offsetPixels":39,"widthPixels":31,"base":0,"heightParameter":"doorHeight","status":"proposto","evidence":"Símbolo de porta na divisória LIVING/ALMOÇO. Folha não modelada para manter vão aberto."},
+    {"id":"door-terrace","wallId":"living-south","type":"door","offsetPixels":35,"widthPixels":54,"base":0,"heightParameter":"doorHeight","status":"proposto","evidence":"Interrupção de fachada voltada ao TER., aproximadamente u=306..360; fotos sala_01/02 mostram acesso envidraçado, correspondência proposta."},
+    {"id":"window-south","wallId":"living-south","type":"window","offsetPixels":275,"widthPixels":65,"base":"windowBase","heightParameter":"windowHeight","status":"proposto","evidence":"Trecho fino na fachada inferior u=55..120 interpretado como janela; tipologia e extensão precisam de revisão. Foto sala_02 mostra janela adjacente ao acesso externo."}
+  ]
+}

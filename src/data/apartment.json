@@ -1,28 +1,99 @@
 {
-  "id": "living-pilot",
-  "name": "LIVING",
-  "status": "proposto",
-  "evidence": "docs/90_references/planta_apartamento.jpeg: contorno interno do LIVING com recorte do hall. Limite norte em v=501 é corte aberto do piloto para circulação, não parede. Faces internas aproximadas pela resolução de 506 × 854 px.",
-  "contour": [{"u":52,"v":631},{"u":230,"v":631},{"u":230,"v":501},{"u":269,"v":501},{"u":269,"v":516},{"u":395,"v":516},{"u":395,"v":761},{"u":52,"v":761}],
+  "schemaVersion": 2,
+  "planId": "planta_apartamento",
+  "planWidth": 506,
+  "planHeight": 854,
+  "convention": "Coordenadas em pixels originais da planta 506 x 854. Cada aresta segue a face interna da parede: bordas superior e esquerda usam o primeiro pixel de piso; bordas inferior e direita usam o primeiro pixel de parede. Faces obtidas por varredura de luminância (parede < 110). Incerteza de leitura: +/- 1 px, cerca de 2,7 cm na escala proposta. A aresta sul do LIVING veio da entrega anterior e usa o último pixel de piso; a diferença é de 1 px e foi preservada para não alterar geometria já conferida.",
   "parameters": {
-    "wallHeight": {"value":2.7,"status":"estimado","evidence":"Pé-direito não fornecido. Valor provisório para inspeção."},
-    "wallThickness": {"value":0.15,"status":"estimado","evidence":"Espessura não medida; parede projetada para fora do contorno interno."},
-    "doorHeight": {"value":2.1,"status":"estimado","evidence":"Altura de passagem provisória; fotos não permitem medida precisa."},
-    "windowBase": {"value":0.9,"status":"estimado","evidence":"Peitoril provisório, sem medição física."},
-    "windowHeight": {"value":1.2,"status":"estimado","evidence":"Altura de janela provisória, sem medição física."}
+    "wallHeight": { "value": 2.7, "status": "estimado", "evidence": "Pé-direito não fornecido. Valor provisório para inspeção." },
+    "wallThickness": { "value": 0.15, "status": "estimado", "evidence": "Espessura não medida; parede projetada para fora do contorno interno. As varreduras mostram bandas de parede de 4 a 8 px (0,11 a 0,21 m), ainda não convertidas em espessura por parede." },
+    "doorHeight": { "value": 2.1, "status": "estimado", "evidence": "Altura de passagem provisória; fotos não permitem medida precisa." },
+    "windowBase": { "value": 0.9, "status": "estimado", "evidence": "Peitoril provisório, sem medição física." },
+    "windowHeight": { "value": 1.2, "status": "estimado", "evidence": "Altura de janela provisória, sem medição física." }
   },
-  "walls": [
-    {"id":"living-almoco","edge":0,"evidence":"Divisória com ALMOÇO; símbolo de porta aproximadamente u=91..122."},
-    {"id":"living-hall","edge":1,"evidence":"Face junto ao hall/elevador; recorte preservado."},
-    {"id":"living-office-return","edge":3,"evidence":"Retorno curto da divisória do escritório; limite do piloto."},
-    {"id":"living-office","edge":4,"evidence":"Divisória sul do ESCRITÓRIO."},
-    {"id":"living-east","edge":5,"evidence":"Parede direita contínua na planta."},
-    {"id":"living-south","edge":6,"evidence":"Fachada inferior: janela u=55..120 e acesso ao terraço u=306..360. Conferir em campo."},
-    {"id":"living-west","edge":7,"evidence":"Parede esquerda do living abaixo do ALMOÇO."}
-  ],
-  "openings": [
-    {"id":"door-almoco","wallId":"living-almoco","type":"door","offsetPixels":39,"widthPixels":31,"base":0,"heightParameter":"doorHeight","status":"proposto","evidence":"Símbolo de porta na divisória LIVING/ALMOÇO. Folha não modelada para manter vão aberto."},
-    {"id":"door-terrace","wallId":"living-south","type":"door","offsetPixels":35,"widthPixels":54,"base":0,"heightParameter":"doorHeight","status":"proposto","evidence":"Interrupção de fachada voltada ao TER., aproximadamente u=306..360; fotos sala_01/02 mostram acesso envidraçado, correspondência proposta."},
-    {"id":"window-south","wallId":"living-south","type":"window","offsetPixels":275,"widthPixels":65,"base":"windowBase","heightParameter":"windowHeight","status":"proposto","evidence":"Trecho fino na fachada inferior u=55..120 interpretado como janela; tipologia e extensão precisam de revisão. Foto sala_02 mostra janela adjacente ao acesso externo."}
+  "rooms": [
+    {
+      "id": "living",
+      "name": "LIVING",
+      "status": "proposto",
+      "evidence": "Contorno interno do LIVING com recorte do hall. Limite norte em v=501 é corte aberto do piloto para circulação, não parede. Traçado da entrega anterior, preservado sem alteração.",
+      "contour": [
+        { "u": 52, "v": 631 }, { "u": 230, "v": 631 }, { "u": 230, "v": 501 }, { "u": 269, "v": 501 },
+        { "u": 269, "v": 516 }, { "u": 395, "v": 516 }, { "u": 395, "v": 761 }, { "u": 52, "v": 761 }
+      ],
+      "walls": [
+        { "id": "living-almoco", "edge": 0, "evidence": "Divisória com ALMOÇO; símbolo de porta aproximadamente u=91..122." },
+        { "id": "living-hall", "edge": 1, "evidence": "Face junto ao hall/elevador; recorte preservado." },
+        { "id": "living-office-return", "edge": 3, "evidence": "Retorno curto da divisória do escritório; limite do piloto." },
+        { "id": "living-office", "edge": 4, "evidence": "Divisória sul do ESCRITÓRIO. Mesma parede física registrada como escritorio-sul." },
+        { "id": "living-east", "edge": 5, "evidence": "Parede direita contínua na planta." },
+        { "id": "living-south", "edge": 6, "evidence": "Fachada inferior: janela u=55..120 e acesso ao terraço u=306..360. Conferir em campo." },
+        { "id": "living-west", "edge": 7, "evidence": "Parede esquerda do living abaixo do ALMOÇO." }
+      ],
+      "openings": [
+        { "id": "door-almoco", "wallId": "living-almoco", "type": "door", "offsetPixels": 39, "widthPixels": 31, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Símbolo de porta na divisória LIVING/ALMOÇO. Folha não modelada para manter vão aberto." },
+        { "id": "door-terrace", "wallId": "living-south", "type": "door", "offsetPixels": 35, "widthPixels": 54, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção de fachada voltada ao TER., aproximadamente u=306..360; fotos sala_01/02 mostram acesso envidraçado, correspondência proposta." },
+        { "id": "window-south", "wallId": "living-south", "type": "window", "offsetPixels": 275, "widthPixels": 65, "base": "windowBase", "heightParameter": "windowHeight", "status": "proposto", "evidence": "Trecho fino na fachada inferior u=55..120 interpretado como janela; tipologia e extensão precisam de revisão. Foto sala_02 mostra janela adjacente ao acesso externo." }
+      ],
+      "checks": [
+        { "id": "living-cota-912", "kind": "length", "printed": 9.12, "pixels": 343, "evidence": "Cota impressa 9,12 na fachada sul. Vão livre interno entre as faces u=52 e u=395. É a mesma cota usada para propor a escala, portanto não é conferência independente." },
+        { "id": "living-cota-653", "kind": "length", "printed": 6.53, "pixels": 245, "evidence": "Cota impressa 6,53 na parede leste, direção perpendicular. Faces v=516 e v=761." },
+        { "id": "living-area", "kind": "area", "printed": 45.16, "pixels": 64150, "evidence": "Área impressa A = 45,16 m². Comparada com a área do contorno inteiro, incluindo o recorte do hall." }
+      ]
+    },
+    {
+      "id": "escritorio",
+      "name": "ESCRITÓRIO",
+      "status": "proposto",
+      "evidence": "Retângulo simples. Faces internas por varredura: parede oeste em u=269..274, leste em u=427..431, norte em v=346..351, sul em v=511..515. Duas linhas finas contínuas em v=362 e v=500 atravessam a sala de parede a parede: móveis embutidos rasos de cerca de 0,27 m, não modelados nesta fase. A parede sul é a mesma divisória registrada no LIVING como living-office.",
+      "contour": [
+        { "u": 275, "v": 352 }, { "u": 427, "v": 352 }, { "u": 427, "v": 511 }, { "u": 275, "v": 511 }
+      ],
+      "walls": [
+        { "id": "escritorio-norte", "edge": 0, "evidence": "Divisória com DORMIT. 2." },
+        { "id": "escritorio-leste", "edge": 1, "evidence": "Fachada leste, com janela." },
+        { "id": "escritorio-sul", "edge": 2, "evidence": "Divisória com o LIVING; mesma parede física de living-office." },
+        { "id": "escritorio-oeste", "edge": 3, "evidence": "Divisória com o corredor, com porta." }
+      ],
+      "openings": [
+        { "id": "janela-escritorio", "wallId": "escritorio-leste", "type": "window", "offsetPixels": 52, "widthPixels": 55, "base": "windowBase", "heightParameter": "windowHeight", "status": "proposto", "evidence": "Interrupção da parede leste entre v=404 e v=458, 55 px = 1,46 m. Peitoril e altura são estimativas globais, não medidas." },
+        { "id": "porta-escritorio", "wallId": "escritorio-oeste", "type": "door", "offsetPixels": 119, "widthPixels": 26, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da parede oeste entre v=366 e v=391, 26 px = 0,69 m, com arco de porta desenhado para o corredor." }
+      ],
+      "checks": [
+        { "id": "escritorio-cota-403", "kind": "length", "printed": 4.03, "pixels": 152, "evidence": "Cota impressa 4,03, horizontal, junto à parede sul. Vão livre entre u=275 e u=427." },
+        { "id": "escritorio-cota-367", "kind": "length", "printed": 3.67, "pixels": 138, "evidence": "Cota impressa 3,67, vertical. Distância livre entre as duas linhas de móvel embutido, v=362 e v=500. Não é a altura total do cômodo." },
+        { "id": "escritorio-area", "kind": "area", "printed": 16.97, "pixels": 24168, "evidence": "Área impressa A = 16,97 m². Equivale a 4,03 x 4,21, ou seja, o retângulo estrutural inteiro." }
+      ]
+    },
+    {
+      "id": "dormitorio-1",
+      "name": "DORMIT. 1",
+      "status": "proposto",
+      "evidence": "Contorno em L por causa de dois nichos de armário embutido, em cantos opostos: noroeste (u=207..227, v=36..117) e sudeste (u=367..387, v=106..205), ambos com cerca de 0,53 m de profundidade e frente marcada por linha fina contínua. Faces internas por varredura: norte v=31..35, oeste alta u=201..206, degrau v=117..123, oeste baixa u=222..227, sul v=206..211, leste alta u=366..373, travessa v=99..106, leste baixa u=388..392. Os armários são mobiliário e não foram modelados; os nichos, sim, porque são recuos reais de parede.",
+      "contour": [
+        { "u": 207, "v": 36 }, { "u": 366, "v": 36 }, { "u": 366, "v": 99 }, { "u": 388, "v": 99 },
+        { "u": 388, "v": 206 }, { "u": 228, "v": 206 }, { "u": 228, "v": 118 }, { "u": 207, "v": 118 }
+      ],
+      "walls": [
+        { "id": "dorm1-norte", "edge": 0, "evidence": "Parede norte contínua, sem abertura detectada." },
+        { "id": "dorm1-leste-alta", "edge": 1, "evidence": "Trecho de fachada leste acima da travessa, com janela." },
+        { "id": "dorm1-nicho-topo", "edge": 2, "evidence": "Travessa que fecha o topo do nicho sudeste, v=99..106." },
+        { "id": "dorm1-leste-nicho", "edge": 3, "evidence": "Fundo do nicho sudeste, u=388..392." },
+        { "id": "dorm1-sul", "edge": 4, "evidence": "Parede sul, com porta que abre para dentro do quarto." },
+        { "id": "dorm1-oeste-baixa", "edge": 5, "evidence": "Parede oeste abaixo do degrau, com porta que abre para o corredor." },
+        { "id": "dorm1-degrau", "edge": 6, "evidence": "Face que fecha a base do nicho noroeste, v=117..123." },
+        { "id": "dorm1-oeste-nicho", "edge": 7, "evidence": "Fundo do nicho noroeste, u=201..206. Comprimento 2,18 m coincide com a cota 2,18 impressa ao lado; a atribuição dessa cota não foi confirmada." }
+      ],
+      "openings": [
+        { "id": "janela-dorm1", "wallId": "dorm1-leste-alta", "type": "window", "offsetPixels": 4, "widthPixels": 55, "base": "windowBase", "heightParameter": "windowHeight", "status": "proposto", "evidence": "Interrupção da fachada leste entre v=40 e v=94, 55 px = 1,46 m. Começa a apenas 4 px do canto norte, o que deixa um pilar de cerca de 0,11 m; verificar em campo se o vão é maior do que o desenho sugere." },
+        { "id": "porta-dorm1-sul", "wallId": "dorm1-sul", "type": "door", "offsetPixels": 129, "widthPixels": 25, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da parede sul entre u=234 e u=258, 25 px = 0,66 m, com arco de porta abrindo para dentro do quarto." },
+        { "id": "porta-dorm1-oeste", "wallId": "dorm1-oeste-baixa", "type": "door", "offsetPixels": 28, "widthPixels": 26, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da parede oeste entre v=152 e v=177, 26 px = 0,69 m, com arco de porta abrindo para o corredor. Duas portas em um mesmo dormitório é incomum; a destinação de cada uma não foi confirmada." }
+      ],
+      "checks": [
+        { "id": "dorm1-cota-370", "kind": "length", "printed": 3.7, "pixels": 138, "evidence": "Cota impressa 3,70, horizontal. Largura livre entre a frente do armário noroeste (u=228) e a face leste (u=366)." },
+        { "id": "dorm1-cota-453", "kind": "length", "printed": 4.53, "pixels": 170, "evidence": "Cota impressa 4,53, vertical. Altura total interna entre v=36 e v=206." },
+        { "id": "dorm1-area", "kind": "area", "printed": 16.76, "pixels": 23460, "evidence": "Área impressa A = 16,76 m², igual a 3,70 x 4,53. Refere-se ao retângulo livre entre os dois nichos, não ao contorno estrutural, cuja área é maior. Por isso os pixels aqui são os do retângulo livre e não os do contorno." }
+      ]
+    }
   ]
 }

@@ -3,20 +3,39 @@ import { pixelDistance, planToWorld, type Point, type Transform } from '../plan/
 
 export type Parameter = { value: number; status: 'estimado'; evidence: string };
 export type ParameterName = 'wallHeight' | 'wallThickness' | 'doorHeight' | 'windowBase' | 'windowHeight';
+export type Parameters = Record<ParameterName, Parameter>;
+export type Wall = { id: string; edge: number; evidence: string };
 export type Opening = { id: string; wallId: string; type: 'door' | 'window'; offsetPixels: number; widthPixels: number; base: 0 | 'windowBase'; heightParameter: 'doorHeight' | 'windowHeight'; status: 'proposto'; evidence: string };
-export type Pilot = { id: 'living-pilot'; name: 'LIVING'; status: 'proposto'; evidence: string; contour: Point[]; parameters: Record<ParameterName, Parameter>; walls: { id: string; edge: number; evidence: string }[]; openings: Opening[] };
+export type Check = { id: string; kind: 'length' | 'area'; printed: number; pixels: number; evidence: string };
+export type Room = { id: string; name: string; status: 'proposto'; evidence: string; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
+export type Apartment = { schemaVersion: 2; planId: string; planWidth: number; planHeight: number; convention: string; parameters: Parameters; rooms: Room[] };
 export const parameterNames: ParameterName[] = ['wallHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight'];
-function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(`Piloto: ${message}`); }
+function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(`Estrutura: ${message}`); }
 const record = (v: unknown): Record<string, any> => { assert(v && typeof v === 'object' && !Array.isArray(v), 'objeto inválido.'); return v as Record<string, any>; };
 const finite = (v: unknown, min: number, max: number) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
 const evidence = (v: unknown) => typeof v === 'string' && v.trim().length > 0 && v.length <= 5000;
+const identifier = (v: unknown) => typeof v === 'string' && /^[a-z0-9-]{1,80}$/.test(v);
 
-export function validatePilot(value: unknown): Pilot {
-  const p = record(value);
-  assert(p.id === 'living-pilot' && p.name === 'LIVING' && p.status === 'proposto' && evidence(p.evidence), 'identificação, estado ou evidência inválidos.');
-  assert(Array.isArray(p.contour) && p.contour.length >= 4 && p.contour.length <= 64, 'contorno inválido.');
-  const contour: Point[] = p.contour.map((v: unknown) => { const q = record(v); assert(finite(q.u, 0, 506) && finite(q.v, 0, 854), 'ponto fora da planta.'); return { u: q.u, v: q.v }; });
-  // Piloto ortogonal: rejeitar arestas degeneradas, cruzadas ou sobrepostas.
+function validateParameters(value: unknown): Parameters {
+  const raw = record(value);
+  const parameters = {} as Parameters;
+  for (const name of parameterNames) {
+    const v = record(raw[name]);
+    const bounds = name === 'wallThickness' ? [.05, .6] : name === 'windowBase' ? [0, 3] : [.2, 5];
+    assert(finite(v.value, bounds[0], bounds[1]) && v.status === 'estimado' && evidence(v.evidence), `parâmetro inválido: ${name}.`);
+    parameters[name] = { value: v.value, status: 'estimado', evidence: v.evidence };
+  }
+  return parameters;
+}
+
+// Contorno ortogonal fechado: rejeita arestas degeneradas, cruzadas ou sobrepostas.
+function validateContour(value: unknown, planWidth: number, planHeight: number): Point[] {
+  assert(Array.isArray(value) && value.length >= 4 && value.length <= 64, 'contorno inválido.');
+  const contour: Point[] = value.map((v: unknown) => {
+    const q = record(v);
+    assert(finite(q.u, 0, planWidth) && finite(q.v, 0, planHeight), 'ponto fora da planta.');
+    return { u: q.u, v: q.v };
+  });
   let area = 0;
   for (let i = 0; i < contour.length; i++) {
     const a = contour[i], b = contour[(i + 1) % contour.length];
@@ -25,25 +44,24 @@ export function validatePilot(value: unknown): Pilot {
     for (let j = i + 1; j < contour.length; j++) {
       if (j === i + 1 || (i === 0 && j === contour.length - 1)) continue;
       const c = contour[j], d = contour[(j + 1) % contour.length];
-      const overlapX = Math.max(Math.min(a.u,b.u),Math.min(c.u,d.u)) <= Math.min(Math.max(a.u,b.u),Math.max(c.u,d.u));
-      const overlapY = Math.max(Math.min(a.v,b.v),Math.min(c.v,d.v)) <= Math.min(Math.max(a.v,b.v),Math.max(c.v,d.v));
+      const overlapX = Math.max(Math.min(a.u, b.u), Math.min(c.u, d.u)) <= Math.min(Math.max(a.u, b.u), Math.max(c.u, d.u));
+      const overlapY = Math.max(Math.min(a.v, b.v), Math.min(c.v, d.v)) <= Math.min(Math.max(a.v, b.v), Math.max(c.v, d.v));
       assert(!(overlapX && overlapY), 'contorno se cruza ou se toca.');
     }
   }
   assert(area > 0, 'contorno deve seguir sentido horário na planta e ter área positiva.');
-  const rawParams = record(p.parameters);
-  const parameters = {} as Pilot['parameters'];
-  for (const name of parameterNames) {
-    const v = record(rawParams[name]);
-    const bounds = name === 'wallThickness' ? [.05, .6] : name === 'windowBase' ? [0, 3] : [.2, 5];
-    assert(finite(v.value, bounds[0], bounds[1]) && v.status === 'estimado' && evidence(v.evidence), `parâmetro inválido: ${name}.`);
-    parameters[name] = { value: v.value, status: 'estimado', evidence: v.evidence };
-  }
-  assert(Array.isArray(p.walls) && p.walls.length > 0 && p.walls.length <= contour.length, 'paredes inválidas.');
+  return contour;
+}
+
+function validateRoom(value: unknown, parameters: Parameters, planWidth: number, planHeight: number): Room {
+  const p = record(value);
+  assert(identifier(p.id) && typeof p.name === 'string' && p.name.trim().length > 0 && p.status === 'proposto' && evidence(p.evidence), 'identificação, estado ou evidência do cômodo inválidos.');
+  const contour = validateContour(p.contour, planWidth, planHeight);
+  assert(Array.isArray(p.walls) && p.walls.length > 0 && p.walls.length <= contour.length, `paredes inválidas em ${p.id}.`);
   const ids = new Set<string>(), edges = new Set<number>();
-  const walls = p.walls.map((item: unknown) => {
+  const walls: Wall[] = p.walls.map((item: unknown) => {
     const w = record(item);
-    assert(typeof w.id === 'string' && /^[a-z0-9-]{1,80}$/.test(w.id) && !ids.has(w.id), 'ID de parede inválido/duplicado.');
+    assert(identifier(w.id) && !ids.has(w.id), 'ID de parede inválido/duplicado.');
     assert(Number.isInteger(w.edge) && w.edge >= 0 && w.edge < contour.length && !edges.has(w.edge) && evidence(w.evidence), 'aresta/evidência da parede inválida.');
     ids.add(w.id); edges.add(w.edge); return { id: w.id as string, edge: w.edge as number, evidence: w.evidence as string };
   });
@@ -51,7 +69,7 @@ export function validatePilot(value: unknown): Pilot {
   const openingIds = new Set<string>();
   const openings: Opening[] = p.openings.map((item: unknown) => {
     const o = record(item);
-    assert(typeof o.id === 'string' && /^[a-z0-9-]{1,80}$/.test(o.id) && !openingIds.has(o.id), 'ID de abertura inválido/duplicado.');
+    assert(identifier(o.id) && !openingIds.has(o.id), 'ID de abertura inválido/duplicado.');
     openingIds.add(o.id);
     const wall = walls.find(w => w.id === o.wallId);
     assert(wall && (o.type === 'door' || o.type === 'window') && o.status === 'proposto' && evidence(o.evidence), 'parede/tipo/evidência da abertura inválidos.');
@@ -64,12 +82,51 @@ export function validatePilot(value: unknown): Pilot {
     return { id: o.id, wallId: o.wallId, type: o.type, offsetPixels: o.offsetPixels, widthPixels: o.widthPixels, base: o.base, heightParameter: o.heightParameter, status: 'proposto', evidence: o.evidence };
   });
   for (const wall of walls) {
-    const slots = openings.filter(o => o.wallId === wall.id).sort((a,b) => a.offsetPixels - b.offsetPixels);
-    for (let i = 1; i < slots.length; i++) assert(slots[i].offsetPixels >= slots[i-1].offsetPixels + slots[i-1].widthPixels, 'aberturas sobrepostas.');
+    const slots = openings.filter(o => o.wallId === wall.id).sort((a, b) => a.offsetPixels - b.offsetPixels);
+    for (let i = 1; i < slots.length; i++) assert(slots[i].offsetPixels >= slots[i - 1].offsetPixels + slots[i - 1].widthPixels, 'aberturas sobrepostas.');
   }
-  return { id: 'living-pilot', name: 'LIVING', status: 'proposto', evidence: p.evidence, contour, parameters, walls, openings };
+  assert(Array.isArray(p.checks) && p.checks.length > 0 && p.checks.length <= 16, `o cômodo ${p.id} precisa registrar ao menos uma conferência contra a planta.`);
+  const checkIds = new Set<string>();
+  const checks: Check[] = p.checks.map((item: unknown) => {
+    const c = record(item);
+    assert(identifier(c.id) && !checkIds.has(c.id), 'ID de conferência inválido/duplicado.');
+    checkIds.add(c.id);
+    assert((c.kind === 'length' || c.kind === 'area') && finite(c.printed, 1e-6, 1e4) && finite(c.pixels, 1e-6, 1e7) && evidence(c.evidence), 'conferência inválida.');
+    return { id: c.id, kind: c.kind, printed: c.printed, pixels: c.pixels, evidence: c.evidence };
+  });
+  return { id: p.id, name: p.name, status: 'proposto', evidence: p.evidence, contour, walls, openings, checks };
 }
-export function initialPilot(): Pilot { return validatePilot(seed); }
+
+export function validateApartment(value: unknown): Apartment {
+  const p = record(value);
+  assert(p.schemaVersion === 2 && p.planId === 'planta_apartamento' && evidence(p.convention), 'versão, planta ou convenção incompatível.');
+  assert(finite(p.planWidth, 1, 1e5) && finite(p.planHeight, 1, 1e5), 'dimensões da planta inválidas.');
+  const parameters = validateParameters(p.parameters);
+  assert(Array.isArray(p.rooms) && p.rooms.length > 0 && p.rooms.length <= 40, 'lista de cômodos inválida.');
+  const roomIds = new Set<string>();
+  const rooms = p.rooms.map((item: unknown) => {
+    const room = validateRoom(item, parameters, p.planWidth, p.planHeight);
+    assert(!roomIds.has(room.id), `cômodo duplicado: ${room.id}.`);
+    roomIds.add(room.id);
+    return room;
+  });
+  return { schemaVersion: 2, planId: 'planta_apartamento', planWidth: p.planWidth, planHeight: p.planHeight, convention: p.convention, parameters, rooms };
+}
+
+export function initialApartment(): Apartment { return validateApartment(seed); }
+export function findRoom(apartment: Apartment, id: string): Room {
+  const room = apartment.rooms.find(r => r.id === id);
+  assert(room, `cômodo desconhecido: ${id}.`);
+  return room;
+}
+
+// Confere a medida impressa na planta contra a escala proposta. Não confirma nada: apenas mede o desvio.
+export function checkDeviation(check: Check, transform: Transform) {
+  assert(Number.isFinite(transform.metersPerPixel) && transform.metersPerPixel > 0, 'transformação inválida.');
+  const measured = check.kind === 'length' ? check.pixels * transform.metersPerPixel : check.pixels * transform.metersPerPixel ** 2;
+  const deviation = measured - check.printed;
+  return { measured, deviation, deviationPercent: deviation / check.printed * 100 };
+}
 
 export type WallPiece = { start: number; end: number; base: number; height: number };
 export function wallPieces(length: number, height: number, openings: { offset: number; width: number; base: number; height: number }[]): WallPiece[] {
@@ -77,8 +134,8 @@ export function wallPieces(length: number, height: number, openings: { offset: n
   const pieces: WallPiece[] = [];
   let cursor = 0;
   const add = (start: number, end: number, base: number, h: number) => { if (end > start && h > 0) pieces.push({ start, end, base, height: h }); };
-  for (const o of [...openings].sort((a,b) => a.offset - b.offset)) {
-    assert([o.offset,o.width,o.base,o.height].every(Number.isFinite) && o.offset >= cursor && o.width > 0 && o.base >= 0 && o.height > 0 && o.base + o.height <= height && o.offset + o.width <= length + 1e-9, 'vão métrico inválido ou sobreposto.');
+  for (const o of [...openings].sort((a, b) => a.offset - b.offset)) {
+    assert([o.offset, o.width, o.base, o.height].every(Number.isFinite) && o.offset >= cursor && o.width > 0 && o.base >= 0 && o.height > 0 && o.base + o.height <= height && o.offset + o.width <= length + 1e-9, 'vão métrico inválido ou sobreposto.');
     add(cursor, o.offset, 0, height);
     add(o.offset, o.offset + o.width, 0, o.base);
     add(o.offset, o.offset + o.width, o.base + o.height, height - o.base - o.height);
@@ -86,15 +143,20 @@ export function wallPieces(length: number, height: number, openings: { offset: n
   }
   add(cursor, length, 0, height); return pieces;
 }
-export function derivePilot(pilot: Pilot, transform: Transform) {
+
+export function deriveRoom(room: Room, parameters: Parameters, transform: Transform) {
   assert(Number.isFinite(transform.metersPerPixel) && transform.metersPerPixel > 0 && Number.isFinite(transform.origin.u) && Number.isFinite(transform.origin.v), 'transformação inválida.');
-  const p = validatePilot(pilot);
-  const contour = p.contour.map(point => planToWorld(point, transform));
-  const walls = p.walls.map(w => {
+  const contour = room.contour.map(point => planToWorld(point, transform));
+  const walls = room.walls.map(w => {
     const start = contour[w.edge], end = contour[(w.edge + 1) % contour.length];
-    const length = Math.hypot(end.x-start.x, end.z-start.z);
-    const openings = p.openings.filter(o => o.wallId === w.id).map(o => ({ ...o, offset: o.offsetPixels * transform.metersPerPixel, width: o.widthPixels * transform.metersPerPixel, base: o.base === 0 ? 0 : p.parameters.windowBase.value, height: p.parameters[o.heightParameter].value }));
-    return { id: w.id, start, end, length, height: p.parameters.wallHeight.value, thickness: p.parameters.wallThickness.value, openings, pieces: wallPieces(length, p.parameters.wallHeight.value, openings) };
+    const length = Math.hypot(end.x - start.x, end.z - start.z);
+    const openings = room.openings.filter(o => o.wallId === w.id).map(o => ({ ...o, offset: o.offsetPixels * transform.metersPerPixel, width: o.widthPixels * transform.metersPerPixel, base: o.base === 0 ? 0 : parameters.windowBase.value, height: parameters[o.heightParameter].value }));
+    return { id: w.id, start, end, length, height: parameters.wallHeight.value, thickness: parameters.wallThickness.value, openings, pieces: wallPieces(length, parameters.wallHeight.value, openings) };
   });
-  return { contour, walls };
+  const checks = room.checks.map(c => ({ ...c, ...checkDeviation(c, transform) }));
+  return { id: room.id, name: room.name, contour, walls, checks };
+}
+
+export function deriveApartment(apartment: Apartment, transform: Transform) {
+  return apartment.rooms.map(room => deriveRoom(room, apartment.parameters, transform));
 }

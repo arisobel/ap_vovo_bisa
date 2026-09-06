@@ -4,12 +4,14 @@
 - Executar revisão visual desktop/mobile e roteiro manual do blueprint quando houver navegador conectado.
 - Conferir falha de imagem e fallback WebGL na interface em execução.
 
-## F1 — próxima fase
+## F1 — em andamento
 - Confirmar que a planta corresponde à configuração atual.
-- Obter medida real conhecida e conferência perpendicular; revisar o desvio.
-- Traçar living piloto com evidências e estimativas explícitas.
-- Definir `apartment.json`: pisos, paredes e aberturas reais; preparar colisores a partir da mesma fonte.
-- Revisar espessuras e pé-direito antes de afirmar precisão; alturas provisórias devem ser rotuladas.
+- Obter medida real conhecida em campo; hoje toda cota vem do desenho.
+- Traçados gravados: LIVING, ESCRITÓRIO, DORMIT. 1. Faltam DORMIT. 2, DORMIT. EMP., COZINHA, ALMOÇO, HALL SOCIAL, ÁREA DE SERVIÇO, LAV., os três BH e o TER.
+- Ambientes sem área ou cota impressa (banheiros, lavabo, área de serviço, hall) não terão conferência independente; registrar isso na evidência.
+- Ligar `deriveApartment` à cena Three.js: hoje o traçado não aparece em lugar nenhum da aplicação.
+- Medir espessura real de parede por banda de pixels em vez do valor global estimado de 0,15 m.
+- Revisar pé-direito antes de afirmar precisão; alturas provisórias devem ser rotuladas.
 
 ## F2
 - Identificar quartos, escritório e banheiros com revisão humana.

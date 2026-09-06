@@ -1,164 +1,199 @@
-﻿{
-    "schemaVersion":  1,
-    "units":  "m",
-    "planId":  "planta_apartamento",
-    "calibration":  null,
-    "photos":  [
-                   {
-                       "id":  "foto_banheiro_01",
-                       "path":  "assets/references/foto_banheiro_01.png",
-                       "originalPath":  "docs/90_references/foto_banheiro_01.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_corredor_cozinha_01",
-                       "path":  "assets/references/foto_corredor_cozinha_01.png",
-                       "originalPath":  "docs/90_references/foto_corredor_cozinha_01.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_cozinha_01",
-                       "path":  "assets/references/foto_cozinha_01.png",
-                       "originalPath":  "docs/90_references/foto_cozinha_01.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_lavabo_01",
-                       "path":  "assets/references/foto_lavabo_01.png",
-                       "originalPath":  "docs/90_references/foto_lavabo_01.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_outro_banheiro_01",
-                       "path":  "assets/references/foto_outro_banheiro_01.png",
-                       "originalPath":  "docs/90_references/foto_outro_banheiro_01.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_quarto_01",
-                       "path":  "assets/references/foto_quarto_01.png",
-                       "originalPath":  "docs/90_references/foto_quarto_01.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_quarto_02",
-                       "path":  "assets/references/foto_quarto_02.png",
-                       "originalPath":  "docs/90_references/foto_quarto_02.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_quarto_03",
-                       "path":  "assets/references/foto_quarto_03.png",
-                       "originalPath":  "docs/90_references/foto_quarto_03.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_sala_01",
-                       "path":  "assets/references/foto_sala_01.png",
-                       "originalPath":  "docs/90_references/foto_sala_01.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_sala_02",
-                       "path":  "assets/references/foto_sala_02.png",
-                       "originalPath":  "docs/90_references/foto_sala_02.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   },
-                   {
-                       "id":  "foto_sala_03",
-                       "path":  "assets/references/foto_sala_03.png",
-                       "originalPath":  "docs/90_references/foto_sala_03.png",
-                       "width":  1086,
-                       "height":  1448,
-                       "kind":  "photo",
-                       "source":  "original",
-                       "roomId":  null,
-                       "pose":  null,
-                       "status":  "pendente",
-                       "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-                   }
-               ],
-    "plan":  {
-                 "id":  "planta_apartamento",
-                 "path":  "assets/references/planta_apartamento.jpeg",
-                 "originalPath":  "docs/90_references/planta_apartamento.jpeg",
-                 "width":  506,
-                 "height":  854,
-                 "kind":  "plan",
-                 "source":  "original",
-                 "roomId":  null,
-                 "pose":  null,
-                 "status":  "pendente",
-                 "observations":  "Identificação espacial e posição de captura pendentes de revisão humana."
-             }
+{
+  "schemaVersion": 1,
+  "units": "m",
+  "planId": "planta_apartamento",
+  "plan": {
+    "id": "planta_apartamento",
+    "path": "assets/references/planta_apartamento.jpeg",
+    "originalPath": "docs/90_references/planta_apartamento.jpeg",
+    "width": 506,
+    "height": 854,
+    "kind": "plan",
+    "source": "original",
+    "roomId": null,
+    "pose": null,
+    "status": "pendente",
+    "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+  },
+  "photos": [
+    {
+      "id": "foto_banheiro_01",
+      "path": "assets/references/foto_banheiro_01.png",
+      "originalPath": "docs/90_references/foto_banheiro_01.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_corredor_cozinha_01",
+      "path": "assets/references/foto_corredor_cozinha_01.png",
+      "originalPath": "docs/90_references/foto_corredor_cozinha_01.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_cozinha_01",
+      "path": "assets/references/foto_cozinha_01.png",
+      "originalPath": "docs/90_references/foto_cozinha_01.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_lavabo_01",
+      "path": "assets/references/foto_lavabo_01.png",
+      "originalPath": "docs/90_references/foto_lavabo_01.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_outro_banheiro_01",
+      "path": "assets/references/foto_outro_banheiro_01.png",
+      "originalPath": "docs/90_references/foto_outro_banheiro_01.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_quarto_01",
+      "path": "assets/references/foto_quarto_01.png",
+      "originalPath": "docs/90_references/foto_quarto_01.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_quarto_02",
+      "path": "assets/references/foto_quarto_02.png",
+      "originalPath": "docs/90_references/foto_quarto_02.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_quarto_03",
+      "path": "assets/references/foto_quarto_03.png",
+      "originalPath": "docs/90_references/foto_quarto_03.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    },
+    {
+      "id": "foto_sala_01",
+      "path": "assets/references/foto_sala_01.png",
+      "originalPath": "docs/90_references/foto_sala_01.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Visão da Sala, olhando em direção a Varanda."
+    },
+    {
+      "id": "foto_sala_02",
+      "path": "assets/references/foto_sala_02.png",
+      "originalPath": "docs/90_references/foto_sala_02.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "parquet em espinha, esquadria clara na fachada sul"
+    },
+    {
+      "id": "foto_sala_03",
+      "path": "assets/references/foto_sala_03.png",
+      "originalPath": "docs/90_references/foto_sala_03.png",
+      "width": 1086,
+      "height": 1448,
+      "kind": "photo",
+      "source": "original",
+      "roomId": null,
+      "pose": null,
+      "status": "pendente",
+      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+    }
+  ],
+  "calibration": {
+    "reference": {
+      "points": [
+        {
+          "u": 52,
+          "v": 761
+        },
+        {
+          "u": 395,
+          "v": 761
+        }
+      ],
+      "distanceMeters": 9.12
+    },
+    "transform": {
+      "origin": {
+        "u": 52,
+        "v": 761
+      },
+      "metersPerPixel": 0.02658892128279883
+    },
+    "check": {
+      "points": [
+        {
+          "u": 395,
+          "v": 516
+        },
+        {
+          "u": 395,
+          "v": 761
+        }
+      ],
+      "distanceMeters": 6.53
+    },
+    "status": "proposto"
+  }
 }

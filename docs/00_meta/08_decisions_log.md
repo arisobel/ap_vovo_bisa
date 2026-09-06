@@ -14,3 +14,9 @@ Origem no primeiro ponto; metros por pixel positivos. A segunda cota mede o desv
 
 ## D005 — 06/09/2026 — Ambiente local
 Node 24 LTS; versões estáveis consultadas no registro npm e lockfile. Three.js em módulo separado e renderização sob demanda; não há animação contínua na F0. Instalação verificada no Node 24.19.0.
+
+## D006 — 06/09/2026 — `apartment.json` com vários cômodos e conferências registradas
+O arquivo deixa de descrever um único piloto e passa a `schemaVersion 2`: parâmetros estimados no topo e `rooms[]`. Cada cômodo exige ao menos um registro em `checks`, comparando um número impresso na planta (cota ou área) com o que o traçado mede. `pilot.ts` valida a estrutura inteira e expõe `deriveRoom`, `deriveApartment` e `checkDeviation`. Coordenadas continuam em pixels originais; a convenção de faces internas está escrita no próprio JSON. Nada disso chegou à cena 3D ainda.
+
+## D007 — 06/09/2026 — Área impressa nem sempre é a área do contorno
+No DORMIT. 1 a área impressa (16,76 m²) equivale a 3,70 × 4,53, o retângulo livre entre dois nichos de armário; o contorno estrutural mede 19,5 m². O campo `pixels` de cada conferência guarda o que foi de fato comparado, e a evidência explica qual. Não ajustar traçado para forçar coincidência com área impressa.

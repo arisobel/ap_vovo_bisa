@@ -8,7 +8,7 @@ const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], d
 describe('estrutura traçada sobre a planta', () => {
   it('valida a base e traz os cômodos já traçados', () => {
     const apartment = initialApartment();
-    expect(apartment.rooms.map(r => r.id)).toEqual(['living', 'escritorio', 'dormitorio-1']);
+    expect(apartment.rooms.map(r => r.id)).toEqual(['living', 'escritorio', 'dormitorio-1', 'dormitorio-2', 'cozinha', 'almoco']);
     expect(apartment.rooms.every(r => r.status === 'proposto')).toBe(true);
     expect(Object.values(apartment.parameters).every(p => p.status === 'estimado')).toBe(true);
   });
@@ -32,10 +32,20 @@ describe('estrutura traçada sobre a planta', () => {
     expect(derived.walls.find(w => w.id === 'escritorio-norte')!.pieces).toHaveLength(1);
   });
 
-  it('deriva os três cômodos e preserva o L do dormitório 1', () => {
+  it('registra o mesmo vão físico com a mesma largura nos dois cômodos que ele liga', () => {
+    const apartment = initialApartment();
+    const pares = [['living', 'door-almoco', 'almoco', 'porta-almoco-living'], ['cozinha', 'porta-cozinha-almoco', 'almoco', 'porta-almoco-cozinha']];
+    for (const [roomA, openingA, roomB, openingB] of pares) {
+      const a = findRoom(apartment, roomA).openings.find(o => o.id === openingA)!;
+      const b = findRoom(apartment, roomB).openings.find(o => o.id === openingB)!;
+      expect(a.widthPixels, `${openingA} x ${openingB}`).toBe(b.widthPixels);
+    }
+  });
+
+  it('deriva os cômodos e preserva o L do dormitório 1', () => {
     const apartment = initialApartment();
     const derived = deriveApartment(apartment, transform);
-    expect(derived).toHaveLength(3);
+    expect(derived).toHaveLength(6);
     const dorm = derived.find(r => r.id === 'dormitorio-1')!;
     expect(dorm.contour).toHaveLength(8);
     expect(dorm.walls).toHaveLength(8);

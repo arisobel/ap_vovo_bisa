@@ -31,7 +31,7 @@
         { "id": "living-west", "edge": 7, "evidence": "Parede esquerda do living abaixo do ALMOÇO." }
       ],
       "openings": [
-        { "id": "door-almoco", "wallId": "living-almoco", "type": "door", "offsetPixels": 39, "widthPixels": 31, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Símbolo de porta na divisória LIVING/ALMOÇO. Folha não modelada para manter vão aberto." },
+        { "id": "door-almoco", "wallId": "living-almoco", "type": "door", "offsetPixels": 40, "widthPixels": 25, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Vão na divisória LIVING/ALMOÇO. Corrigido pela varredura da banda de parede v=624..629, que mostra interrupção entre u=93 e u=117: 25 px = 0,66 m, e não os 31 px estimados visualmente na entrega anterior. Mesmo vão físico registrado em almoco como porta-almoco-living. Folha não modelada para manter o vão aberto." },
         { "id": "door-terrace", "wallId": "living-south", "type": "door", "offsetPixels": 35, "widthPixels": 54, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção de fachada voltada ao TER., aproximadamente u=306..360; fotos sala_01/02 mostram acesso envidraçado, correspondência proposta." },
         { "id": "window-south", "wallId": "living-south", "type": "window", "offsetPixels": 275, "widthPixels": 65, "base": "windowBase", "heightParameter": "windowHeight", "status": "proposto", "evidence": "Trecho fino na fachada inferior u=55..120 interpretado como janela; tipologia e extensão precisam de revisão. Foto sala_02 mostra janela adjacente ao acesso externo." }
       ],
@@ -93,6 +93,81 @@
         { "id": "dorm1-cota-370", "kind": "length", "printed": 3.7, "pixels": 138, "evidence": "Cota impressa 3,70, horizontal. Largura livre entre a frente do armário noroeste (u=228) e a face leste (u=366)." },
         { "id": "dorm1-cota-453", "kind": "length", "printed": 4.53, "pixels": 170, "evidence": "Cota impressa 4,53, vertical. Altura total interna entre v=36 e v=206." },
         { "id": "dorm1-area", "kind": "area", "printed": 16.76, "pixels": 23460, "evidence": "Área impressa A = 16,76 m², igual a 3,70 x 4,53. Refere-se ao retângulo livre entre os dois nichos, não ao contorno estrutural, cuja área é maior. Por isso os pixels aqui são os do retângulo livre e não os do contorno." }
+      ]
+    },
+    {
+      "id": "dormitorio-2",
+      "name": "DORMIT. 2",
+      "status": "proposto",
+      "evidence": "Retângulo simples, entre o DORMIT. 1 ao norte e o ESCRITÓRIO ao sul. Faces internas por varredura: norte v=206..211 (mesma parede de dorm1-sul), sul v=346..351 (mesma parede de escritorio-norte), oeste u=270..274, leste u=427..431 (mesma fachada de escritorio-leste). Linha fina contínua em v=326 atravessa a sala inteira: frente de armário embutido de cerca de 0,53 m junto à parede sul, mobiliário não modelado.",
+      "contour": [
+        { "u": 275, "v": 212 }, { "u": 427, "v": 212 }, { "u": 427, "v": 346 }, { "u": 275, "v": 346 }
+      ],
+      "walls": [
+        { "id": "dorm2-norte", "edge": 0, "evidence": "Divisória com DORMIT. 1; mesma parede física de dorm1-sul." },
+        { "id": "dorm2-leste", "edge": 1, "evidence": "Fachada leste, com janela." },
+        { "id": "dorm2-sul", "edge": 2, "evidence": "Divisória com o ESCRITÓRIO; mesma parede física de escritorio-norte." },
+        { "id": "dorm2-oeste", "edge": 3, "evidence": "Divisória com o corredor, com porta." }
+      ],
+      "openings": [
+        { "id": "janela-dorm2", "wallId": "dorm2-leste", "type": "window", "offsetPixels": 40, "widthPixels": 55, "base": "windowBase", "heightParameter": "windowHeight", "status": "proposto", "evidence": "Interrupção da fachada leste entre v=252 e v=306, 55 px = 1,46 m. Mesma largura das janelas do ESCRITÓRIO e do DORMIT. 1." },
+        { "id": "porta-dorm2", "wallId": "dorm2-oeste", "type": "door", "offsetPixels": 25, "widthPixels": 26, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da parede oeste entre v=295 e v=320, 26 px = 0,69 m, com arco de porta desenhado para o corredor." }
+      ],
+      "checks": [
+        { "id": "dorm2-cota-403", "kind": "length", "printed": 4.03, "pixels": 152, "evidence": "Cota impressa 4,03, horizontal. Largura interna entre u=275 e u=427, igual à do ESCRITÓRIO logo abaixo." },
+        { "id": "dorm2-cota-302", "kind": "length", "printed": 3.02, "pixels": 114, "evidence": "Cota impressa 3,02, vertical. Altura livre entre v=212 e a frente do armário em v=326. A altura total do cômodo é maior, 134 px." },
+        { "id": "dorm2-area", "kind": "area", "printed": 12.16, "pixels": 17328, "evidence": "Área impressa A = 12,16 m², igual a 4,03 x 3,02. Exclui a faixa do armário, como no DORMIT. 1; os pixels aqui são os do retângulo livre." }
+      ]
+    },
+    {
+      "id": "cozinha",
+      "name": "COZINHA",
+      "status": "proposto",
+      "evidence": "Retângulo simples no setor de serviço. Faces internas por varredura: oeste u=46..51 (fachada), leste u=157..162, norte v=352..356 (divisória fina de 5 px com o banheiro de serviço), sul v=498..503. Nenhuma linha de bancada ou armário foi detectada dentro do cômodo, o que é surpreendente para uma cozinha: a planta provavelmente não desenha o mobiliário fixo aqui.",
+      "contour": [
+        { "u": 52, "v": 357 }, { "u": 157, "v": 357 }, { "u": 157, "v": 498 }, { "u": 52, "v": 498 }
+      ],
+      "walls": [
+        { "id": "cozinha-norte", "edge": 0, "evidence": "Divisória fina ao norte, com porta." },
+        { "id": "cozinha-leste", "edge": 1, "evidence": "Divisória com o corredor, com porta." },
+        { "id": "cozinha-sul", "edge": 2, "evidence": "Divisória com o ALMOÇO, com porta; mesma parede física de almoco-norte." },
+        { "id": "cozinha-oeste", "edge": 3, "evidence": "Fachada oeste, com janela." }
+      ],
+      "openings": [
+        { "id": "porta-cozinha-norte", "wallId": "cozinha-norte", "type": "door", "offsetPixels": 28, "widthPixels": 25, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da divisória norte entre u=81 e u=105, 25 px = 0,66 m, com arco de porta abrindo para dentro da cozinha." },
+        { "id": "porta-cozinha-leste", "wallId": "cozinha-leste", "type": "door", "offsetPixels": 40, "widthPixels": 25, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da parede leste entre v=397 e v=421, 25 px = 0,66 m, ligando ao corredor." },
+        { "id": "porta-cozinha-almoco", "wallId": "cozinha-sul", "type": "door", "offsetPixels": 40, "widthPixels": 25, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da divisória sul entre u=93 e u=117, 25 px = 0,66 m. Mesmo vão físico registrado em almoco como porta-almoco-cozinha." },
+        { "id": "janela-cozinha", "wallId": "cozinha-oeste", "type": "window", "offsetPixels": 7, "widthPixels": 55, "base": "windowBase", "heightParameter": "windowHeight", "status": "proposto", "evidence": "Interrupção da fachada oeste entre v=437 e v=491, 55 px = 1,46 m, no terço inferior do cômodo." }
+      ],
+      "checks": [
+        { "id": "cozinha-cota-280", "kind": "length", "printed": 2.8, "pixels": 105, "evidence": "Cota impressa 2,80, horizontal, junto à divisória sul. Largura interna entre u=52 e u=157." },
+        { "id": "cozinha-cota-374", "kind": "length", "printed": 3.74, "pixels": 141, "evidence": "Cota impressa 3,74, vertical, na fachada oeste. Altura interna entre v=357 e v=498." },
+        { "id": "cozinha-area", "kind": "area", "printed": 10.47, "pixels": 14805, "evidence": "Área impressa A = 10,47 m². Aqui a área impressa corresponde ao contorno estrutural inteiro, sem desconto de mobiliário." }
+      ]
+    },
+    {
+      "id": "almoco",
+      "name": "ALMOÇO",
+      "status": "proposto",
+      "evidence": "Retângulo simples abaixo da COZINHA, com a mesma largura. Faces internas por varredura: oeste u=46..51 (fachada), leste u=157..162, norte v=498..503, sul v=624..629 (mesma parede de living-almoco). Nenhuma linha de mobiliário detectada dentro do cômodo.",
+      "contour": [
+        { "u": 52, "v": 504 }, { "u": 157, "v": 504 }, { "u": 157, "v": 624 }, { "u": 52, "v": 624 }
+      ],
+      "walls": [
+        { "id": "almoco-norte", "edge": 0, "evidence": "Divisória com a COZINHA, com porta; mesma parede física de cozinha-sul." },
+        { "id": "almoco-leste", "edge": 1, "evidence": "Divisória com o hall social; nenhuma interrupção detectada." },
+        { "id": "almoco-sul", "edge": 2, "evidence": "Divisória com o LIVING, com porta; mesma parede física de living-almoco." },
+        { "id": "almoco-oeste", "edge": 3, "evidence": "Fachada oeste, com janela." }
+      ],
+      "openings": [
+        { "id": "porta-almoco-cozinha", "wallId": "almoco-norte", "type": "door", "offsetPixels": 40, "widthPixels": 25, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Mesmo vão de porta-cozinha-almoco, visto do lado sul: interrupção entre u=93 e u=117." },
+        { "id": "porta-almoco-living", "wallId": "almoco-sul", "type": "door", "offsetPixels": 40, "widthPixels": 25, "base": 0, "heightParameter": "doorHeight", "status": "proposto", "evidence": "Interrupção da parede sul entre u=93 e u=117, 25 px = 0,66 m. Mesmo vão físico registrado no LIVING como door-almoco." },
+        { "id": "janela-almoco", "wallId": "almoco-oeste", "type": "window", "offsetPixels": 32, "widthPixels": 55, "base": "windowBase", "heightParameter": "windowHeight", "status": "proposto", "evidence": "Interrupção da fachada oeste entre v=537 e v=591, 55 px = 1,46 m. É a segunda das duas janelas da fachada oeste; a primeira é a da COZINHA." }
+      ],
+      "checks": [
+        { "id": "almoco-cota-280", "kind": "length", "printed": 2.8, "pixels": 105, "evidence": "Cota impressa 2,80, horizontal, junto à parede sul. Largura interna entre u=52 e u=157, igual à da COZINHA." },
+        { "id": "almoco-cota-321", "kind": "length", "printed": 3.21, "pixels": 120, "evidence": "Cota impressa 3,21, vertical, na fachada oeste. Altura interna entre v=504 e v=624." },
+        { "id": "almoco-area", "kind": "area", "printed": 8.99, "pixels": 12600, "evidence": "Área impressa A = 8,99 m², igual a 2,80 x 3,21. Corresponde ao contorno estrutural inteiro." }
       ]
     }
   ]

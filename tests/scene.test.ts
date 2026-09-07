@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, doorwayLabels, SETA_DESTINO, fixtureBlock, FOV_MAX, FOV_MIN, FOV_PASSEIO, headingFromYaw, horizontalFovDeg, innerPoint, labelFacing, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks, wallDimensions, wallLabels, zoomFov } from '../src/scene/preview';
+import { barriersFrom, doorwayLabels, SETA_DESTINO, fixtureBlock, FOV_MAX, FOV_MIN, FOV_PASSEIO, headingFromYaw, horizontalFovDeg, innerPoint, labelFacing, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, touchGesture, TOQUE_SENSIBILIDADE, walkStartFromPose, wallBlocks, wallDimensions, wallLabels, zoomFov } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
 import { POSE_LIMITS } from '../src/data/validation';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
@@ -513,5 +513,43 @@ describe('cotas das paredes', () => {
     const soma = wallDimensions(escritorio).reduce((t, c) => t + c.length, 0);
     const perimetro = escritorio.walls.reduce((t, w) => t + w.length, 0);
     expect(soma).toBeCloseTo(perimetro, 9);
+  });
+});
+
+describe('gestos de toque no passeio', () => {
+  it('um dedo arrastando gira a vista na direção do arrasto', () => {
+    const gesto = touchGesture([{ x: 100, y: 200 }], [{ x: 130, y: 190 }]);
+    expect(gesto.look).toEqual({ dx: 30, dy: -10 });
+    expect(gesto.pinch).toBe(0);
+  });
+
+  it('dois dedos que se afastam pedem aproximação, e o contrário afasta', () => {
+    const juntos = [{ x: 100, y: 100 }, { x: 140, y: 100 }];
+    const separados = [{ x: 100, y: 100 }, { x: 200, y: 100 }];
+    expect(touchGesture(juntos, separados).pinch).toBeCloseTo(60, 9);
+    expect(touchGesture(separados, juntos).pinch).toBeCloseTo(-60, 9);
+    // A pinça nunca gira a vista junto: um gesto de cada vez.
+    expect(touchGesture(juntos, separados).look).toBeNull();
+  });
+
+  it('não produz salto quando um dedo entra ou sai da tela', () => {
+    const um = [{ x: 100, y: 100 }];
+    const dois = [{ x: 100, y: 100 }, { x: 300, y: 300 }];
+    expect(touchGesture(um, dois)).toEqual({ look: null, pinch: 0 });
+    expect(touchGesture(dois, um)).toEqual({ look: null, pinch: 0 });
+    expect(touchGesture([], um)).toEqual({ look: null, pinch: 0 });
+  });
+
+  it('um arrasto de meia tela dá meia volta ou mais no corpo', () => {
+    // O passeio converte deslocamento em radianos com fator .0026. Sem o ganho do toque,
+    // arrastar 180 px viraria menos de 30 graus, e olhar para trás exigiria vários arrastos.
+    const graus = 180 * TOQUE_SENSIBILIDADE * .0026 * 180 / Math.PI;
+    expect(graus).toBeGreaterThan(35);
+  });
+
+  it('a pinça e a roda do mouse aproximam para o mesmo lado', () => {
+    // Dedos afastando (pinch positivo) entra em zoomFov com sinal trocado, como a roda para cima.
+    const afastando = touchGesture([{ x: 0, y: 0 }, { x: 40, y: 0 }], [{ x: 0, y: 0 }, { x: 90, y: 0 }]);
+    expect(zoomFov(FOV_PASSEIO, -afastando.pinch)).toBeLessThan(FOV_PASSEIO);
   });
 });

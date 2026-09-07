@@ -31,3 +31,26 @@
 - Medir no local a altura do gradil, a espessura de parede, o peitoril e a altura de janela. `railingHeight` é a segunda altura do projeto e continua estimada.
 - Materiais/objetos fixos após validação estrutural.
 - Medir desempenho, custo de imagens e bundle; considerar miniaturas derivadas preservando originais.
+
+## Mobile
+- Passeio por toque implementado (arrastar para olhar, botões para andar, pinça para aproximar). Nunca aberto em celular por mim: confirmar em uso real o tamanho dos botões, a sensibilidade do arrasto e se a barra de ferramentas continua alcançável.
+- Tela cheia no iPhone: o Safari do iOS não implementa `requestFullscreen` em elemento comum. O botão existe e o navegador recusa; a mensagem de recusa é exibida, mas não há alternativa oferecida.
+- A planta e a cena dividem a tela em duas colunas até 700 px de largura. Em celular empilham; não foi medido se a cena sobra pequena demais para o passeio fora da tela cheia.
+
+## Produto — planta de terceiros (intenção registrada, não iniciado)
+Pedido do usuário em 07/09/2026: avaliar o que falta para o mesmo aplicativo servir a outras plantas, com entrada simples de uma planta nova. Registrado como intenção; nada começou, e começar exige pedido explícito.
+
+O motor já é genérico: escala, colisão, passeio, cotas, letreiros, poses e publicação leem `apartment.json` + `project.json` e não conhecem este apartamento. O que é feito à mão hoje é o traçado.
+
+- Degrau 1 — editor de contorno sobre a planta. Clicar os cantos de um cômodo, arrastar vãos nas paredes e gravar em `apartment.json`, com a mesma validação de hoje. É o degrau que substitui a varredura de pixels feita fora do aplicativo, e o único que torna o traçado possível sem mim. Serve já a este projeto: as pendências do armário do escritório e da ordem armário/box no BH social seriam resolvidas pelo próprio usuário.
+- Degrau 2 — mais de um projeto. Hoje há um `apartment.json` e um `project.json` embutidos no bundle. Exige lista de plantas e um pacote por planta (imagens + contratos). Sem backend, por importação de arquivo; com backend, quebra a restrição de arquitetura vigente e precisa de decisão do usuário antes.
+- Degrau 3 — assistência no traçado. Detecção automática de paredes já foi tentada nesta planta e falhou (ver KNOWN_ISSUES: janelas e portas são furos na máscara de parede e o exterior vaza para dentro, fundindo cômodos). Um produto pode sugerir e deixar corrigir; não pode prometer traçado automático.
+- Entrada alternativa a avaliar no degrau 3: `IFCLoader` do three.js. Quem tem o projeto em IFC/BIM entrega geometria e nomes de ambiente prontos, sem traçar nada — mas é outro caminho de dados, não a planta em JPEG, e exige contrato próprio.
+
+## Foto-realismo — referências enviadas pelo usuário (07/09/2026)
+Exemplos do three.js indicados como visão futura. Ordenados por proporção entre efeito e custo; nenhum iniciado.
+
+- Textura de piso e revestimento (`webgl_lights_physical` mostra o efeito). É o que mais muda a impressão pelo menor custo: recortes ladrilháveis do parquete, do azulejo e da cerâmica tirados das 11 fotografias, mais mapeamento de tom (ACES) e sombra suave. Derivadas devem ser identificadas como tal; os originais continuam intactos em `docs/90_references/`.
+- Iluminação por sondas (`webgl_lightprobes`, `_complex`, `_sponza`). O exemplo `complex` é exatamente o caso deste projeto: volumes de sonda independentes por cômodo, com luz indireta e sangramento de cor entre superfícies. Depende de geometria fechada, que o traçado já produz, e de um passo de pré-cálculo — é o degrau mais caro e o de maior efeito.
+- Luminárias reais (`webgl_lights_spotlight`, `webgl_lights_physical`). Exige saber onde estavam as luminárias e de que tipo eram; hoje não há evidência disso em nenhuma foto, e inventar posição de luz é inventar dado.
+- Mobília em malha real (`webgl_loader_gltf`) no lugar das caixas atuais. Depende de origem e licença dos modelos, e cada modelo pesa no bundle e na imagem publicada.

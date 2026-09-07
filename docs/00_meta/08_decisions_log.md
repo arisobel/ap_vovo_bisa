@@ -136,3 +136,12 @@ Alternativa descartada: separar em duas plantas, uma por tarefa. Duplicaria o zo
 
 ## D013 — 06/09/2026 — Pose amarrada ao cômodo declarado
 Uma pose só é aceita se o ponto cair dentro do contorno do `roomId` declarado, o que liga `project.json` a `apartment.json` na validação. Custo: o traçado passa a ser dependência do contrato das fotos. Ganho: some a classe inteira de erro em que a foto diz um ambiente e a câmera está em outro. Toda pose exige também evidência escrita e confiança declarada; `confirmado` é estado de revisão humana, nunca automático.
+
+## D023 — 07/09/2026 — O passeio no celular tem controles próprios
+Relato de uso real: no celular, "Andar a partir daqui" entrava no passeio e nada respondia. Causa: o passeio inteiro foi construído sobre `requestPointerLock` e `mousemove`, que não existem em tela de toque, e a órbita fica desligada durante a caminhada — o resultado era uma cena viva sem nenhuma entrada ligada a ela.
+
+Decisão: o toque ganha gestos próprios, e não uma emulação de mouse. Um dedo arrastando gira a vista; dois dedos aproximam e afastam mudando o campo de visão, pela mesma função `zoomFov` da roda do mouse. O roteamento do gesto é função pura (`touchGesture`), testada, e o ganho de sensibilidade do arrasto (`TOQUE_SENSIBILIDADE`) é constante nomeada, não um número solto. Em ponteiro grosso não se pede a trava do ponteiro: pedir só produziria um erro silencioso.
+
+Andar é o que não cabe em gesto: o arrasto já está ocupado girando a vista, e não há teclado. Entram quatro botões sobre a cena, visíveis apenas em ponteiro grosso, que seguram exatamente as mesmas teclas que o teclado seguraria — a função de movimento não sabe de onde veio a intenção.
+
+Alternativa descartada: dedo parado avança. Ficaria ambíguo com o arrasto lento e não teria como andar para trás nem de lado.

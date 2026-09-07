@@ -64,6 +64,15 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
   </main>`;
 
 const el = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
+// A ajuda do passeio muda com o aparelho: no celular não há teclas nem roda de mouse, e
+// repetir "W A S D" ali seria instrução para um teclado que não existe.
+function instrucoesDePasseio(): string {
+  const toque = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  return toque
+    ? 'Arraste o dedo para olhar, use as setas no canto da tela para andar e junte ou afaste dois dedos para aproximar. O leque laranja na planta acompanha sua vista.'
+    : 'W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, F para tela cheia, Esc para sair. O leque laranja na planta acompanha sua vista.';
+}
+
 function notify(message: string, error = false) { const n = el('notice'); n.textContent = message; n.hidden = false; n.classList.toggle('error', error); }
 function persist(message: string) {
   try { localStorage.setItem(STORAGE, JSON.stringify(project)); notify(message); }
@@ -425,7 +434,7 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     el('scene-walk').classList.toggle('primary', !ativo);
     for (const id of ['scene-frame', 'scene-top', 'scene-walls', 'scene-palette', 'scene-furniture', 'scene-labels', 'scene-dims']) el<HTMLButtonElement>(id).disabled = ativo;
     el('scene-info').textContent = ativo
-      ? 'Passeio: W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, F para tela cheia, Esc para sair. O leque laranja na planta acompanha sua vista.'
+      ? `Passeio: ${instrucoesDePasseio()}`
       : sceneInfo;
   });
   el('scene-walk').onclick = () => {

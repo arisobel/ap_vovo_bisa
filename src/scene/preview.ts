@@ -55,6 +55,28 @@ export function zoomFov(atual: number, deltaY: number): number {
   return Math.max(FOV_MIN, Math.min(FOV_MAX, atual + Math.sign(deltaY) * 3));
 }
 
+export type TouchPoint = { x: number; y: number };
+// Um dedo gira a vista; dois dedos aproximam ou afastam. `pinch` é a variação da distância
+// entre os dedos, em pixels: positiva quando eles se afastam.
+export type TouchGesture = { look: { dx: number; dy: number } | null; pinch: number };
+
+function separacao(dedos: TouchPoint[]): number {
+  return Math.hypot(dedos[0].x - dedos[1].x, dedos[0].y - dedos[1].y);
+}
+
+export function touchGesture(anterior: TouchPoint[], atual: TouchPoint[]): TouchGesture {
+  if (anterior.length === 1 && atual.length === 1) {
+    return { look: { dx: atual[0].x - anterior[0].x, dy: atual[0].y - anterior[0].y }, pinch: 0 };
+  }
+  if (anterior.length >= 2 && atual.length >= 2) return { look: null, pinch: separacao(atual) - separacao(anterior) };
+  // Um dedo a mais ou a menos: o quadro seguinte recomeça do zero, senão a vista daria um salto.
+  return { look: null, pinch: 0 };
+}
+
+// O arrasto do dedo cobre menos pixels que o mouse com o ponteiro preso: sem este ganho,
+// virar o corpo no celular exigiria vários arrastos.
+export const TOQUE_SENSIBILIDADE = 1.5;
+
 // Campo horizontal a partir do vertical e da proporção da tela. Mesma fórmula do contrato
 // das fotografias; repetida aqui para a cena não depender do módulo de dados.
 export function horizontalFovDeg(verticalFovDeg: number, aspect: number): number {
@@ -493,12 +515,15 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const alvoTelaCheia = fullscreenTarget ?? host;
   let trocaDeTela = 0;
   let aoClicarNaCena: (() => void) | null = null;
+  // Telas de toque não têm ponteiro para prender nem teclado à mão: o passeio precisa de
+  // controles próprios, e pedir a trava do ponteiro ali só produziria um erro silencioso.
+  const ponteiroGrosso = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
   let apertou: { x: number; y: number; t: number } | null = null;
 
   // Clique curto na cena parada entra no passeio. Arrastar continua girando a órbita:
   // a diferença é deslocamento e tempo, não o botão.
-  const marcarAperto = (event: MouseEvent) => { apertou = andando ? null : { x: event.clientX, y: event.clientY, t: performance.now() }; };
-  const talvezPassear = (event: MouseEvent) => {
+  const marcarAperto = (event: PointerEvent) => { apertou = andando ? null : { x: event.clientX, y: event.clientY, t: performance.now() }; };
+  const talvezPassear = (event: PointerEvent) => {
     const inicio = apertou;
     apertou = null;
     if (!inicio || andando || !aoClicarNaCena) return;
@@ -518,7 +543,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const aoTrocarTelaCheia = () => {
     if (!andando) return;
     trocaDeTela = performance.now();
-    if (document.pointerLockElement !== tela) tela.requestPointerLock?.();
+    if (!ponteiroGrosso() && document.pointerLockElement !== tela) tela.requestPointerLock?.();
   };
   let poseDeOrigem: PoseView | null = null;
   let avisarPasseio: (state: WalkState | null) => void = () => {};
@@ -538,6 +563,56 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   }
   const teclas = new Set<string>();
   let avancoDoMouse = false;
+  let dedos: TouchPoint[] = [];
+
+  // Botões na própria cena: no celular não há W nem seta, e o arrasto já está ocupado
+  // girando a vista. Cada botão apenas segura a mesma tecla que o teclado seguraria.
+  const comandos = document.createElement('div');
+  comandos.className = 'walk-pad';
+  comandos.hidden = true;
+  for (const [tecla, sinal, titulo] of [
+    ['w', '▲', 'Andar para a frente'],
+    ['a', '◀', 'Deslocar para a esquerda'],
+    ['s', '▼', 'Andar para trás'],
+    ['d', '▶', 'Deslocar para a direita'],
+  ] as [string, string, string][]) {
+    const botao = document.createElement('button');
+    botao.type = 'button';
+    botao.textContent = sinal;
+    botao.title = titulo;
+    botao.setAttribute('aria-label', titulo);
+    botao.dataset.dir = tecla;
+    botao.addEventListener('pointerdown', event => { event.preventDefault(); teclas.add(tecla); });
+    for (const fim of ['pointerup', 'pointercancel', 'pointerleave'] as const) {
+      botao.addEventListener(fim, () => teclas.delete(tecla));
+    }
+    comandos.appendChild(botao);
+  }
+  host.appendChild(comandos);
+
+  const pontosDeToque = (event: TouchEvent): TouchPoint[] =>
+    Array.from(event.touches, toque => ({ x: toque.clientX, y: toque.clientY }));
+
+  const aoTocar = (event: TouchEvent) => {
+    if (!andando) return;
+    event.preventDefault();
+    dedos = pontosDeToque(event);
+  };
+  const aoArrastarDedo = (event: TouchEvent) => {
+    if (!andando) return;
+    event.preventDefault();
+    const atual = pontosDeToque(event);
+    const gesto = touchGesture(dedos, atual);
+    dedos = atual;
+    if (gesto.look) olhar(gesto.look.dx * TOQUE_SENSIBILIDADE, gesto.look.dy * TOQUE_SENSIBILIDADE);
+    // Uma pinça pequena é tremor de dedo, não intenção de aproximar.
+    if (Math.abs(gesto.pinch) > 2) {
+      camera.fov = zoomFov(camera.fov, -gesto.pinch);
+      camera.updateProjectionMatrix();
+    }
+    avisarPosicao();
+    render();
+  };
   let yaw = 0, pitch = 0, quadro = 0, instante = 0;
 
   function limpar(grupo: Group) {
@@ -839,10 +914,15 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     tela.addEventListener('wheel', aoRolar, { passive: false });
     tela.addEventListener('mousedown', aoApertarMouse);
     document.addEventListener('mouseup', aoSoltarMouse);
+    tela.addEventListener('touchstart', aoTocar, { passive: false });
+    tela.addEventListener('touchmove', aoArrastarDedo, { passive: false });
+    tela.addEventListener('touchend', aoTocar, { passive: false });
+    tela.addEventListener('touchcancel', aoTocar, { passive: false });
     document.addEventListener('fullscreenchange', aoTrocarTelaCheia);
     letreiros.visible = true;
     tela.focus();
-    tela.requestPointerLock?.();
+    comandos.hidden = !ponteiroGrosso();
+    if (!ponteiroGrosso()) tela.requestPointerLock?.();
     instante = performance.now();
     quadro = requestAnimationFrame(passo);
     ultimo = null;
@@ -860,7 +940,13 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     tela.removeEventListener('wheel', aoRolar);
     tela.removeEventListener('mousedown', aoApertarMouse);
     document.removeEventListener('mouseup', aoSoltarMouse);
+    tela.removeEventListener('touchstart', aoTocar);
+    tela.removeEventListener('touchmove', aoArrastarDedo);
+    tela.removeEventListener('touchend', aoTocar);
+    tela.removeEventListener('touchcancel', aoTocar);
     avancoDoMouse = false;
+    dedos = [];
+    comandos.hidden = true;
     document.removeEventListener('fullscreenchange', aoTrocarTelaCheia);
     letreiros.visible = false;
     camera.fov = FOV_PASSEIO;
@@ -896,9 +982,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     setWalkListener(listener) { avisarPasseio = listener; },
     setClickToWalk(handler) {
       aoClicarNaCena = handler;
-      tela.removeEventListener('mousedown', marcarAperto);
-      tela.removeEventListener('mouseup', talvezPassear);
-      if (handler) { tela.addEventListener('mousedown', marcarAperto); tela.addEventListener('mouseup', talvezPassear); }
+      tela.removeEventListener('pointerdown', marcarAperto);
+      tela.removeEventListener('pointerup', talvezPassear);
+      if (handler) { tela.addEventListener('pointerdown', marcarAperto); tela.addEventListener('pointerup', talvezPassear); }
     },
     toggleFullscreen() { alternarTelaCheia(); },
     isFullscreen() { return document.fullscreenElement === alvoTelaCheia; },
@@ -925,6 +1011,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     },
     dispose() {
       exitWalk();
+      comandos.remove();
       observer.disconnect();
       controls.dispose();
       limpar(pisos); limpar(paredes);

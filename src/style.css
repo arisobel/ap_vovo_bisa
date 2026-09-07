@@ -18,3 +18,12 @@
 .visit-caption{padding:14px 20px 18px}.visit-caption .result{margin:0}#visit-tools>div{display:flex;gap:6px;flex-wrap:wrap}.photo-card[disabled]{opacity:.42;cursor:not-allowed}.photo-card[disabled] .photo-state{font-style:italic}
 .toggle{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--green);font-weight:600;border:1px solid var(--border);border-radius:7px;padding:10px 12px;background:#fff;cursor:pointer;white-space:nowrap}.toggle:hover{background:#edf1e9;border-color:#9aaea0}.toggle input{width:15px;height:15px;margin:0;accent-color:var(--green);cursor:pointer}.toggle:has(input:disabled){opacity:.5;cursor:not-allowed}.plan-tools .toggle{padding:4px 9px}
 .visual-panel:fullscreen{width:100vw;height:100vh;display:flex;flex-direction:column;border-radius:0;background:#fff}.visual-panel:fullscreen .panel-heading,.visual-panel:fullscreen .visual-footer,.visual-panel:fullscreen #photo-view,.visual-panel:fullscreen .photo-stage{display:none}.visual-panel:fullscreen #preview{flex:1;min-height:0;height:auto}.visual-panel:fullscreen #preview canvas{width:100%;height:100%;max-width:none;max-height:none}
+
+/* Comandos de caminhada para tela de toque: no celular não há teclado nem ponteiro preso. */
+.walk-pad{position:absolute;right:14px;bottom:14px;display:grid;grid-template-columns:repeat(3,52px);grid-template-rows:repeat(2,52px);gap:6px;z-index:3;touch-action:none}
+.walk-pad button{padding:0;font-size:17px;line-height:1;border-radius:12px;background:#fbfcf5e0;border-color:#b3c0ab;color:var(--green);-webkit-user-select:none;user-select:none;touch-action:none}
+.walk-pad button:active{background:var(--green);color:#fff}
+.walk-pad button[data-dir=w]{grid-column:2;grid-row:1}
+.walk-pad button[data-dir=a]{grid-column:1;grid-row:2}
+.walk-pad button[data-dir=s]{grid-column:2;grid-row:2}
+.walk-pad button[data-dir=d]{grid-column:3;grid-row:2}

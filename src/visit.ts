@@ -92,6 +92,15 @@ function drawMarkers() {
 }
 
 // O botão diz o que vai acontecer: com uma foto escolhida, o passeio começa no ponto dela.
+// A ajuda do passeio muda com o aparelho: no celular não há teclas nem roda de mouse, e
+// repetir "W A S D" ali seria instrução para um teclado que não existe.
+function instrucoesDePasseio(): string {
+  const toque = typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
+  return toque
+    ? 'Arraste o dedo para olhar, use as setas no canto da tela para andar e junte ou afaste dois dedos para aproximar. O leque na planta acompanha sua vista.'
+    : 'W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, F para tela cheia, Esc para sair. O leque na planta acompanha sua vista.';
+}
+
 function rotuloPasseio(caminhando: boolean) {
   if (caminhando) return 'Sair do passeio (Esc)';
   return selecionada ? 'Andar a partir daqui' : 'Andar por dentro';
@@ -182,10 +191,10 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     el('visit-walk').classList.toggle('primary', !ativo);
     for (const id of ['visit-frame', 'visit-photo', 'visit-furniture', 'visit-labels', 'visit-dims']) el<HTMLButtonElement>(id).disabled = ativo;
     el('visit-info').textContent = ativo
-      ? 'W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, F para tela cheia, Esc para sair. O leque na planta acompanha sua vista.'
+      ? instrucoesDePasseio()
       : selecionada
         ? `Você está no ponto de ${title(selecionada)}, olhando na mesma direção da fotografia.`
-        : 'Reconstruído a partir da planta e das fotografias. Clique no modelo para entrar no passeio.';
+        : 'Reconstruído a partir da planta e das fotografias. Toque no modelo para entrar no passeio.';
   });
   el('visit-walk').onclick = () => {
     if (andando) { scene?.exitWalk(); return; }

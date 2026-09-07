@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, fixtureBlock, headingFromYaw, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, startingPoint, walkStartFromPose, wallBlocks } from '../src/scene/preview';
+import { barriersFrom, fixtureBlock, headingFromYaw, innerPoint, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
 import { POSE_LIMITS } from '../src/data/validation';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
@@ -291,5 +291,71 @@ describe('passeio a partir de uma fotografia', () => {
 
   it('não leva o campo de visão da fotografia para o passeio', () => {
     expect(Object.keys(walkStartFromPose(pose))).not.toContain('verticalFovDeg');
+  });
+});
+
+describe('rótulos no piso', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+  const salas = deriveApartment(initialApartment(), transform);
+
+  // Os dois dormitórios divergem da área impressa porque a planta não conta o armário
+  // embutido; ver D007. O rótulo mostra a área do traçado, que é a do modelo na tela.
+  const armarioEmbutido = ['dormitorio-1', 'dormitorio-2'];
+
+  it('bate com a área impressa, exceto onde a planta não conta o armário embutido', () => {
+    const apartment = initialApartment();
+    let comparadas = 0;
+    for (const sala of salas) {
+      const area = roomArea(sala.contour);
+      expect(area, sala.id).toBeGreaterThan(0);
+      const impressa = apartment.rooms.find(r => r.id === sala.id)!.checks.find(c => c.kind === 'area');
+      if (!impressa) continue;
+      comparadas += 1;
+      const desvio = Math.abs(area - impressa.printed) / impressa.printed;
+      if (armarioEmbutido.includes(sala.id)) expect(desvio, sala.id).toBeGreaterThan(.1);
+      else expect(desvio, sala.id).toBeLessThan(.01);
+    }
+    expect(comparadas).toBe(6);
+  });
+
+  it('mede a diferença dos dormitórios como uma faixa de armário, não como erro de traçado', () => {
+    const apartment = initialApartment();
+    for (const id of armarioEmbutido) {
+      const sala = salas.find(r => r.id === id)!;
+      const impressa = apartment.rooms.find(r => r.id === id)!.checks.find(c => c.kind === 'area')!;
+      const sobra = roomArea(sala.contour) - impressa.printed;
+      const zs = sala.contour.map(p => p.z), xs = sala.contour.map(p => p.x);
+      const maiorLado = Math.max(Math.max(...xs) - Math.min(...xs), Math.max(...zs) - Math.min(...zs));
+      // A sobra dividida pelo maior lado dá a profundidade da faixa: entre 50 e 75 cm,
+      // que é profundidade de armário e não erro de contorno.
+      const profundidade = sobra / maiorLado;
+      expect(profundidade, id).toBeGreaterThan(.5);
+      expect(profundidade, id).toBeLessThan(.75);
+    }
+  });
+
+  it('põe o rótulo dentro do cômodo, com folga das paredes', () => {
+    for (const sala of salas) {
+      const lugar = labelPlacement(sala)!;
+      expect(lugar, sala.id).not.toBeNull();
+      const barreiras = barriersFrom([sala]);
+      expect(barreiras.length).toBeGreaterThan(0);
+      // O centro do rótulo não pode cair fora: resolveCollision não o empurraria.
+      const livre = resolveCollision(lugar.center.x, lugar.center.z, .01, barreiras);
+      expect(Math.hypot(livre.x - lugar.center.x, livre.z - lugar.center.z), sala.id).toBeLessThan(.05);
+    }
+  });
+
+  it('nunca deixa o rótulo mais largo que o cômodo', () => {
+    for (const sala of salas) {
+      const lugar = labelPlacement(sala)!;
+      const xs = sala.contour.map(p => p.x);
+      expect(lugar.width, sala.id).toBeLessThanOrEqual(Math.max(...xs) - Math.min(...xs));
+    }
+  });
+
+  it('usa o mesmo ponto folgado que escolhe a partida do passeio', () => {
+    const maior = salas.reduce((a, b) => (roomArea(a.contour) > roomArea(b.contour) ? a : b));
+    expect(startingPoint(salas)).toEqual(innerPoint(maior.contour));
   });
 });

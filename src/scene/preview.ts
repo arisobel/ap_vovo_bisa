@@ -1,4 +1,4 @@
-import { AmbientLight, BoxGeometry, Color, DirectionalLight, DoubleSide, GridHelper, Group, Mesh, MeshLambertMaterial, PerspectiveCamera, Scene, Shape, ShapeGeometry, WebGLRenderer } from 'three';
+import { AmbientLight, BoxGeometry, CanvasTexture, Color, DirectionalLight, DoubleSide, GridHelper, Group, Mesh, MeshBasicMaterial, MeshLambertMaterial, PerspectiveCamera, PlaneGeometry, Scene, Shape, ShapeGeometry, WebGLRenderer } from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 type Ponto = { x: number; z: number };
@@ -24,6 +24,7 @@ export type PreviewHandle = {
   viewFromPose(pose: PoseView | null): void;
   setPalette(mode: PaletteMode): void;
   setFurniture(visible: boolean): void;
+  setLabels(visible: boolean): void;
   setWalkListener(listener: (state: WalkState | null) => void): void;
   dispose(): void;
 };
@@ -237,6 +238,47 @@ function distanciaAoContorno(contour: Ponto[], x: number, z: number): number {
   return menor;
 }
 
+// Ponto mais folgado dentro do contorno: serve tanto para começar o passeio quanto para
+// pousar o rótulo do cômodo sem que ele encoste nas paredes.
+export function innerPoint(contour: Ponto[], passos = 24): Ponto | null {
+  const xs = contour.map(p => p.x), zs = contour.map(p => p.z);
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
+  let melhor: Ponto | null = null, folga = 0;
+  for (let i = 1; i < passos; i++) {
+    for (let j = 1; j < passos; j++) {
+      const p = { x: minX + (maxX - minX) * i / passos, z: minZ + (maxZ - minZ) * j / passos };
+      if (!dentro(contour, p.x, p.z)) continue;
+      const d = distanciaAoContorno(contour, p.x, p.z);
+      if (d > folga) { folga = d; melhor = p; }
+    }
+  }
+  return melhor;
+}
+
+// Área do contorno em metros quadrados, pela fórmula do laço. É a área DO TRAÇADO,
+// não a impressa na planta: as duas divergem, e o rótulo descreve o que está na tela.
+export function roomArea(contour: Ponto[]): number {
+  let soma = 0;
+  for (let i = 0; i < contour.length; i++) {
+    const a = contour[i], b = contour[(i + 1) % contour.length];
+    soma += a.x * b.z - b.x * a.z;
+  }
+  return Math.abs(soma) / 2;
+}
+
+// Onde e de que tamanho o rótulo é desenhado no piso. Largura limitada pela folga do
+// cômodo, para que o texto não vaze por cima das paredes.
+export function labelPlacement(room: SceneRoom) {
+  const centro = innerPoint(room.contour);
+  if (!centro) return null;
+  const xs = room.contour.map(p => p.x), zs = room.contour.map(p => p.z);
+  const largura = Math.max(...xs) - Math.min(...xs);
+  const profundidade = Math.max(...zs) - Math.min(...zs);
+  const folga = distanciaAoContorno(room.contour, centro.x, centro.z);
+  const width = Math.min(largura * .8, profundidade * 1.6, folga * 3.4, 3.2);
+  return { center: centro, width: Math.max(.5, width), area: roomArea(room.contour) };
+}
+
 export function startingPoint(rooms: SceneRoom[]): Ponto | null {
   let melhorSala: SceneRoom | null = null, maiorArea = 0;
   for (const room of rooms) {
@@ -249,20 +291,7 @@ export function startingPoint(rooms: SceneRoom[]): Ponto | null {
     if (area > maiorArea) { maiorArea = area; melhorSala = room; }
   }
   if (!melhorSala) return null;
-  const contorno = melhorSala.contour;
-  const xs = contorno.map(p => p.x), zs = contorno.map(p => p.z);
-  const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
-  let melhor: Ponto | null = null, folga = 0;
-  const passos = 24;
-  for (let i = 1; i < passos; i++) {
-    for (let j = 1; j < passos; j++) {
-      const p = { x: minX + (maxX - minX) * i / passos, z: minZ + (maxZ - minZ) * j / passos };
-      if (!dentro(contorno, p.x, p.z)) continue;
-      const d = distanciaAoContorno(contorno, p.x, p.z);
-      if (d > folga) { folga = d; melhor = p; }
-    }
-  }
-  return melhor;
+  return innerPoint(melhorSala.contour);
 }
 
 export function mountPreview(host: HTMLElement, report: (message: string) => void): PreviewHandle {
@@ -270,7 +299,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   try { renderer = new WebGLRenderer({ antialias: true, alpha: false }); }
   catch {
     report('WebGL indisponível. A planta, a calibração e as fotos continuam disponíveis.');
-    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setWalkListener() {}, dispose() {} };
+    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setLabels() {}, setWalkListener() {}, dispose() {} };
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   host.prepend(renderer.domElement);
@@ -289,8 +318,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   scene.add(grade);
   const pisos = new Group();
   const moveis = new Group();
+  const rotulos = new Group();
   const paredes = new Group();
-  scene.add(pisos, paredes, moveis);
+  scene.add(pisos, paredes, moveis, rotulos);
 
   const camera = new PerspectiveCamera(42, 1, 0.1, 400);
   camera.position.set(11, 12, 13);
@@ -318,6 +348,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const materialVidro = new MeshLambertMaterial({ color: VIDRO, transparent: true, opacity: .34 });
   let paleta: PaletteMode = 'materiais';
   let comMobilia = true;
+  let comRotulos = false;
   let ultimasSalas: SceneRoom[] | null = null;
 
   let limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 };
@@ -342,8 +373,43 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   let yaw = 0, pitch = 0, quadro = 0, instante = 0;
 
   function limpar(grupo: Group) {
-    for (const filho of grupo.children) if (filho instanceof Mesh) filho.geometry.dispose();
+    for (const filho of grupo.children) {
+      if (!(filho instanceof Mesh)) continue;
+      filho.geometry.dispose();
+      // Rótulos têm textura própria por cômodo; sem descartar, cada remontagem vaza memória.
+      const material = filho.material;
+      if (material instanceof MeshBasicMaterial && material.map) { material.map.dispose(); material.dispose(); }
+    }
     grupo.clear();
+  }
+
+  // O rótulo é uma textura de canvas deitada no piso. Não usa fonte externa nem geometria
+  // de texto: é a forma mais barata de escrever no chão sem dependência nova.
+  function montarRotulo(room: SceneRoom) {
+    const lugar = labelPlacement(room);
+    if (!lugar) return;
+    const escala = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = escala; canvas.height = Math.round(escala / 2.6);
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#2b3b33';
+    ctx.font = `600 ${Math.round(escala * .15)}px "Segoe UI", system-ui, sans-serif`;
+    ctx.fillText(room.name, canvas.width / 2, canvas.height * .36, canvas.width * .94);
+    ctx.fillStyle = '#5d6b60';
+    ctx.font = `400 ${Math.round(escala * .105)}px "Segoe UI", system-ui, sans-serif`;
+    const area = lugar.area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    ctx.fillText(`${area} m²`, canvas.width / 2, canvas.height * .72, canvas.width * .94);
+    const textura = new CanvasTexture(canvas);
+    const altura = lugar.width * (canvas.height / canvas.width);
+    const mesh = new Mesh(new PlaneGeometry(lugar.width, altura), new MeshBasicMaterial({ map: textura, transparent: true, depthWrite: false }));
+    mesh.rotation.x = -Math.PI / 2;
+    // Um centímetro acima do piso: evita o cintilar de duas superfícies no mesmo plano.
+    mesh.position.set(lugar.center.x, .01, lugar.center.z);
+    rotulos.add(mesh);
   }
 
   function montarPiso(room: SceneRoom) {
@@ -381,12 +447,14 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     limpar(pisos);
     limpar(paredes);
     limpar(moveis);
+    limpar(rotulos);
     grade.visible = !rooms || rooms.length === 0;
     barreiras = []; partida = null;
     if (!rooms || rooms.length === 0) { limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 }; frame(); return; }
     const xs: number[] = [], zs: number[] = [];
     for (const room of rooms) {
       montarPiso(room);
+      if (comRotulos) montarRotulo(room);
       for (const wall of room.walls) montarParede(wall, room);
       if (comMobilia) for (const fixture of room.fixtures) {
         const bloco = fixtureBlock(fixture);
@@ -556,6 +624,11 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   return {
     show, setWallsVisible, lookFromTop, frame, enterWalk, exitWalk, viewFromPose,
     setWalkListener(listener) { avisarPasseio = listener; },
+    setLabels(visible) {
+      if (visible === comRotulos) return;
+      comRotulos = visible;
+      if (ultimasSalas) show(ultimasSalas);
+    },
     setFurniture(visible) {
       if (visible === comMobilia) return;
       comMobilia = visible;

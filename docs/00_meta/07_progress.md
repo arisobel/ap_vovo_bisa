@@ -1,5 +1,19 @@
 # Progresso
 
+## 07/09/2026 — Nome e área escritos no piso, e o que a área revelou
+
+Pedido do usuário: um checkbox que escreva no chão da cena o nome do cômodo e a metragem. Feito nas duas telas, com o rótulo como textura de canvas deitada um centímetro acima do piso — sem fonte externa, sem geometria de texto, sem dependência nova (D019). O ponto e a largura do rótulo saem de `labelPlacement`, que reaproveita o mesmo sampler de ponto folgado que escolhe a partida do passeio: o texto pousa longe das paredes e nunca fica mais largo que o cômodo.
+
+A área é a do traçado, calculada pela fórmula do laço, e não a impressa: quem caminha pisa no polígono do traçado, não no número do desenho.
+
+Escrever essa área forçou a comparação com as cotas impressas, e o resultado é um achado. Dos seis cômodos com área impressa, quatro batem a menos de 1% — LIVING +0,4%, ESCRITÓRIO +0,7%, COZINHA 0,0%, ALMOÇO −0,9%. Os dois dormitórios divergem: DORMIT. 1 +16,2% e DORMIT. 2 +18,4%. Dividindo a sobra pelo maior lado de cada quarto, sai uma faixa de 0,5 a 0,75 m de profundidade — profundidade de armário embutido. **A planta imprime a área do quarto sem o armário.** Isso não era erro de traçado, e agora há teste que afirma as duas coisas separadamente.
+
+O que continua sem explicação: o ESCRITÓRIO bate a 0,7% embora `foto_quarto_03` mostre um armário do piso ao teto. Ou o armário está fora do contorno traçado, ou a convenção da área impressa muda de cômodo para cômodo, que é o que D007 já registrava. Ficou em KNOWN_ISSUES.
+
+Um teste que escrevi antes de olhar os números afirmava que todo cômodo ficaria a menos de 8% da área impressa. Falhou, e ainda bem: substituí por dois testes que afirmam o padrão real, incluindo a profundidade da faixa de armário.
+
+126 testes passam; TypeScript e build limpos.
+
 ## 07/09/2026 — O passeio começa de onde a fotografia foi tirada
 
 Primeiro deploy feito pelo usuário, com a visita na raiz do site. O pedido seguinte veio de usar: alternando entre a fotografia e o modelo, clicar em andar por dentro deveria continuar dali, e não saltar para o ponto de partida no meio da sala.

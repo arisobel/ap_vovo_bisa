@@ -38,6 +38,18 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D019 - O rótulo no piso mostra a área do traçado, não a impressa (07/09/2026)
+
+O usuário pediu o nome do cômodo e a metragem escritos no chão da cena, com um checkbox.
+
+Decisao: a área vem do contorno traçado, calculada pela fórmula do laço, e não da cota impressa. O rótulo descreve o que está na tela: quem caminha pisa no polígono do traçado, não no número do desenho.
+
+Isso expõe uma divergência, e a divergência é informação. Comparando os seis cômodos com área impressa: quatro batem a menos de 1%, e os dois dormitórios divergem +16,2% e +18,4%. Dividindo a sobra pelo maior lado de cada quarto, dá uma faixa de 0,5 a 0,75 m de profundidade - profundidade de armário embutido. A planta imprime a área útil do quarto sem o armário. Há teste que afirma as duas coisas: o desvio pequeno dos quatro e a faixa de armário nos dois.
+
+O escritório, porém, bate a 0,7%, embora `foto_quarto_03` mostre um armário do piso ao teto. Ou o armário está fora do contorno traçado, ou a convenção da área impressa muda de cômodo para cômodo - que é exatamente o que D007 registrou. Não foi resolvido.
+
+O rótulo é uma textura de canvas deitada no piso, um centímetro acima dele. Sem fonte externa, sem geometria de texto e sem dependência nova. Cada remontagem descarta as texturas anteriores, senão cada clique no checkbox vazaria memória.
+
 ## D018 - Visita e editor são telas separadas, e só a visita é publicada (07/09/2026)
 
 O usuário pediu uma tela para o público, sem controles de gravação, e deploy no CapRover. A proibição de publicar vinha do escopo da F0 e foi levantada por ele.

@@ -1,7 +1,7 @@
 import './style.css';
 import { confidences, initialProject, parseProject, poseToWorld, roomOptions, validateProject, type Pose, type Project, type Reference } from './data/validation';
-import { calibrate, compareMeasurement, type Point, type Measurement } from './plan/spatial';
-import { routePlanClick, type PosePick } from './plan/planmode';
+import { pixelDistance, azimuthBetween, calibrate, compareMeasurement, type Point, type Measurement } from './plan/spatial';
+import { MIN_HEADING_PIXELS, routePlanClick, type PosePick } from './plan/planmode';
 
 const STORAGE = 'vovo-bisa-project-v1';
 let project: Project = initialProject();
@@ -19,6 +19,7 @@ let derive: typeof import('./data/pilot').deriveApartment | null = null;
 let sceneInfo = '';
 let walking = false;
 let posePick: PosePick = 'idle';
+let mouse: { u: number; v: number } | null = null;
 let poseDraft: { u: number; v: number } | null = null;
 let comparing = false;
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
@@ -53,7 +54,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
         <div class="panel-heading"><div><span class="step">02</span><h2>Visualização</h2></div><button id="show-3d" hidden>Voltar à visão 3D</button><span id="visual-badge" class="badge">Sem escala definida</span></div>
         <div class="plan-tools" id="scene-tools" hidden><span id="scene-info"></span><div><button id="scene-walk" class="primary">Andar por dentro</button><button id="scene-frame">Enquadrar</button><button id="scene-top">Vista superior</button><button id="scene-walls" aria-pressed="true">Ocultar paredes</button></div></div>
         <div id="preview"><div class="preview-note" id="preview-note"><span class="cube-icon">◇</span><p class="eyebrow">CADA MEMÓRIA TEM SEU ESPAÇO</p><h3>O apartamento começa<br>pela planta.</h3><p>Defina a escala ao lado para levantar<br>as paredes do traçado.<br>Sem escala não há metro, e sem metro<br>não há parede.</p><span class="subtle-pill">Grade ilustrativa · sem geometria do imóvel</span></div><p id="webgl-status" class="webgl-status" role="status"></p></div>
-        <div id="photo-view" hidden><div class="photo-stage" id="photo-stage"><img id="large-photo" alt=""><p id="photo-error" class="error" hidden></p></div><div class="photo-description"><p class="eyebrow">FOTOGRAFIA ORIGINAL</p><h3 id="photo-title"></h3><p id="photo-meta"></p><p id="photo-state" class="muted"></p><label for="observations">Observações da referência</label><textarea id="observations" rows="2" maxlength="5000"></textarea><button id="save-notes">Salvar observações no rascunho</button><details id="pose-editor"><summary>Ambiente, ponto e direção</summary><label for="pose-room">Ambiente</label><select id="pose-room"></select><div class="measure-row"><button id="pose-mark" type="button">Marcar ponto e direção na planta</button><button id="pose-clear" type="button">Limpar pose</button></div><p id="pose-help" class="muted"></p><div class="point-inputs"><label>Altura da câmera (m)<input id="pose-height" type="number" step="0.05" min="0.3" max="2.5"></label><label>Azimute (°)<input id="pose-heading" type="number" step="1" min="0" max="359"></label><label>Inclinação (°)<input id="pose-pitch" type="number" step="1" min="-60" max="60"></label><label>Campo vertical (°)<input id="pose-fov" type="number" step="1" min="20" max="100"></label></div><label for="pose-confidence">Confiança da associação</label><select id="pose-confidence"></select><label for="pose-evidence">Evidência (por que esta foto é deste ponto)</label><textarea id="pose-evidence" rows="2" maxlength="5000"></textarea><div class="measure-row"><button id="pose-save" class="primary" type="button">Salvar como proposta</button><button id="pose-confirm" type="button">Confirmar</button><button id="pose-compare" type="button">Comparar com o modelo</button></div></details></div></div>
+        <div id="photo-view" hidden><div class="photo-stage" id="photo-stage"><img id="large-photo" alt=""><p id="photo-error" class="error" hidden></p></div><div class="photo-description"><p class="eyebrow">FOTOGRAFIA ORIGINAL</p><h3 id="photo-title"></h3><p id="photo-meta"></p><p id="photo-state" class="muted"></p><label for="observations">Observações da referência</label><textarea id="observations" rows="2" maxlength="5000"></textarea><button id="save-notes">Salvar observações no rascunho</button><details id="pose-editor"><summary>Ambiente, ponto e direção</summary><label for="pose-room">Ambiente</label><select id="pose-room"></select><div class="measure-row"><button id="pose-mark" type="button">Marcar ponto e direção na planta</button><button id="pose-leave" hidden>Voltar a medir cotas</button><button id="pose-clear" type="button">Limpar pose</button></div><p id="pose-help" class="muted"></p><div class="point-inputs"><label>Altura da câmera (m)<input id="pose-height" type="number" step="0.05" min="0.3" max="2.5"></label><label>Azimute (°)<input id="pose-heading" type="number" step="1" min="0" max="359"></label><label>Inclinação (°)<input id="pose-pitch" type="number" step="1" min="-60" max="60"></label><label>Campo vertical (°)<input id="pose-fov" type="number" step="1" min="20" max="100"></label></div><label for="pose-confidence">Confiança da associação</label><select id="pose-confidence"></select><label for="pose-evidence">Evidência (por que esta foto é deste ponto)</label><textarea id="pose-evidence" rows="2" maxlength="5000"></textarea><div class="measure-row"><button id="pose-save" class="primary" type="button">Salvar como proposta</button><button id="pose-confirm" type="button">Confirmar</button><button id="pose-compare" type="button">Comparar com o modelo</button></div></details></div></div>
         <div class="visual-footer"><span class="dot"></span><span>Uma reconstrução aproximada, guiada por evidências.</span></div>
       </article>
     </section>
@@ -79,6 +80,22 @@ el('zoom-in').onclick = () => setZoom(zoom + .5);
 el('zoom-out').onclick = () => setZoom(zoom - .5);
 el('zoom-reset').onclick = () => setZoom(1);
 
+// Converte um evento do mouse em coordenada de pixel da planta.
+function planPoint(event: MouseEvent) {
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return null;
+  const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
+  if (p.x < 0 || p.y < 0 || p.x > project.plan.width || p.y > project.plan.height) return null;
+  return { u: Math.round(p.x * 100) / 100, v: Math.round(p.y * 100) / 100 };
+}
+
+// Direcao que o rascunho mostra: o mouse enquanto se aponta, o campo depois de apontado.
+function draftHeading(from: { u: number; v: number }): number | null {
+  if (posePick === 'heading') return mouse && pixelDistance(from, mouse) >= MIN_HEADING_PIXELS ? azimuthBetween(from, mouse) : null;
+  if (poseDraft) { const n = el<HTMLInputElement>('pose-heading').valueAsNumber; return Number.isFinite(n) ? n : null; }
+  return selectedPhoto?.pose?.headingDeg ?? null;
+}
+
 function drawMarkers() {
   const g = document.getElementById('markers')!;
   g.replaceChildren();
@@ -97,11 +114,20 @@ function drawMarkers() {
   const pose = poseDraft ?? (selectedPhoto?.pose ? { u: selectedPhoto.pose.u, v: selectedPhoto.pose.v } : null);
   if (pose) {
     make('circle', { cx: `${pose.u}`, cy: `${pose.v}`, r: '8', fill: '#244d42', stroke: 'white', 'stroke-width': '2' });
-    const grau = poseDraft && posePick === 'heading' ? null : selectedPhoto?.pose?.headingDeg;
-    if (grau !== null && grau !== undefined) {
+    const grau = draftHeading(pose);
+    if (grau !== null) {
       const rad = grau * Math.PI / 180;
-      make('line', { x1: `${pose.u}`, y1: `${pose.v}`, x2: `${pose.u + Math.sin(rad) * 46}`, y2: `${pose.v - Math.cos(rad) * 46}`, stroke: '#244d42', 'stroke-width': '4' });
-      make('circle', { cx: `${pose.u + Math.sin(rad) * 46}`, cy: `${pose.v - Math.cos(rad) * 46}`, r: '4', fill: '#244d42' });
+      const previa = posePick === 'heading';
+      const alcance = previa ? 78 : 52;
+      const px = pose.u + Math.sin(rad) * alcance, py = pose.v - Math.cos(rad) * alcance;
+      const linha: Record<string, string> = { x1: `${pose.u}`, y1: `${pose.v}`, x2: `${px}`, y2: `${py}`, stroke: '#244d42', 'stroke-width': '4' };
+      if (previa) linha['stroke-dasharray'] = '9 6';
+      make('line', linha);
+      // Ponta da seta, para a direcao ser lida de relance.
+      const asa = (lado: number) => `${px - Math.sin(rad + lado) * 15},${py + Math.cos(rad + lado) * 15}`;
+      make('polyline', { points: `${asa(-0.42)} ${px},${py} ${asa(0.42)}`, fill: 'none', stroke: '#244d42', 'stroke-width': '4' });
+      const texto = make('text', { x: `${Math.min(px + 10, project.plan.width - 40)}`, y: `${Math.max(18, py - 10)}`, fill: '#1d4b3d', 'font-size': '19', 'font-weight': '700', stroke: 'white', 'stroke-width': '3.5', 'paint-order': 'stroke' });
+      texto.textContent = `${Math.round(grau)}°`;
     }
   }
   ['a-u', 'a-v', 'b-u', 'b-v'].forEach((id, index) => { const p = selected[Math.floor(index / 2)]; el<HTMLInputElement>(id).value = p ? String(p[index % 2 === 0 ? 'u' : 'v']) : ''; });
@@ -120,16 +146,23 @@ svg.addEventListener('click', event => {
   if (acao.target === 'pose-point') { poseDraft = acao.point; setPosePick('heading'); return; }
   if (acao.target === 'pose-heading') {
     el<HTMLInputElement>('pose-heading').value = String(Math.round(acao.headingDeg));
-    setPosePick('idle');
-    notify('Direcao registrada. Reveja os campos e salve como proposta.');
+    setPosePick('done');
+    notify(`Direção registrada: ${Math.round(acao.headingDeg)}°. Escreva a evidência e salve como proposta.`);
     return;
   }
   if (selected.length === 2) selected = [];
   selected.push(acao.point); drawMarkers();
 });
+svg.addEventListener('mousemove', event => {
+  if (posePick !== 'heading') return;
+  const p = planPoint(event);
+  if (p && mouse && p.u === mouse.u && p.v === mouse.v) return;
+  mouse = p; drawMarkers();
+});
+svg.addEventListener('mouseleave', () => { if (mouse) { mouse = null; drawMarkers(); } });
 // Sair da marcacao pelo teclado, sem precisar procurar o botao.
 document.addEventListener('keydown', event => {
-  if (event.key === 'Escape' && posePick !== 'idle') { poseDraft = null; setPosePick('idle'); }
+  if (event.key === 'Escape' && posePick !== 'idle') { if (posePick !== 'done') poseDraft = null; setPosePick('idle'); }
 });
 el('use-coordinates').onclick = () => {
   const values = ['a-u', 'a-v', 'b-u', 'b-v'].map(id => el<HTMLInputElement>(id).valueAsNumber);
@@ -145,8 +178,8 @@ function changeMode(next: typeof mode) {
   el('apply').textContent = mode === 'reference' ? 'Aplicar escala' : 'Comparar cota';
   drawMarkers();
 }
-el('reference-mode').onclick = () => changeMode('reference');
-el('check-mode').onclick = () => changeMode('check');
+el('reference-mode').onclick = () => { setPosePick('idle'); changeMode('reference'); };
+el('check-mode').onclick = () => { setPosePick('idle'); changeMode('check'); };
 el('clear').onclick = () => { selected = []; drawMarkers(); };
 function renderCalibration() {
   const c = project.calibration;
@@ -182,21 +215,26 @@ function setPosePick(next: PosePick) {
   el('plan-mode').textContent = next === 'idle'
     ? 'Selecione dois pontos de uma cota'
     : next === 'point'
-      ? `Marcando ${foto}: clique onde a camera estava`
-      : `Marcando ${foto}: clique para onde ela apontava`;
+      ? `${foto} · passo 1 de 2 — clique no ponto onde a câmera estava`
+      : next === 'heading'
+        ? `${foto} · passo 2 de 2 — mova o mouse e clique para onde ela apontava`
+        : `${foto} · ponto e direção marcados. A planta só volta a medir cotas quando você mandar.`;
   document.querySelector('.plan-panel')!.classList.toggle('marking', next !== 'idle');
+  el('pose-leave').hidden = next !== 'done';
+  if (next !== 'heading') mouse = null;
   renderPoseHelp(); drawMarkers();
 }
 
 function renderPoseHelp() {
   el('pose-help').textContent = posePick === 'point'
-    ? 'Clique na planta o ponto onde a camera estava.'
+    ? 'Passo 1 de 2: clique na planta o ponto onde a câmera estava.'
     : posePick === 'heading'
-      ? 'Agora clique para onde ela apontava. A seta vai do ponto ate esse clique.'
+      ? 'Passo 2 de 2: mova o mouse sobre a planta — a seta tracejada segue o cursor e mostra o ângulo. Clique para fixar.'
       : poseDraft
-        ? `Ponto marcado em (${fmt(poseDraft.u, 1)}; ${fmt(poseDraft.v, 1)}). Revise os campos e salve.`
+        ? `Ponto em (${fmt(poseDraft.u, 1)}; ${fmt(poseDraft.v, 1)}), direção ${el<HTMLInputElement>('pose-heading').value}°. Revise os campos e salve.`
         : 'Nenhum ponto novo marcado. O que estiver salvo aparece na planta em verde.';
-  el('pose-mark').textContent = posePick === 'idle' ? 'Marcar ponto e direcao na planta' : 'Cancelar marcacao';
+  el('pose-mark').textContent = posePick === 'idle' ? 'Marcar ponto e direção na planta'
+    : posePick === 'done' ? 'Refazer ponto e direção' : 'Cancelar marcação';
 }
 
 function renderPoseEditor() {
@@ -298,6 +336,8 @@ el('show-3d').onclick = () => {
 el<HTMLSelectElement>('pose-room').append(...[{ id: '', name: 'Sem ambiente definido' }, ...roomOptions].map(r => new Option(r.name, r.id)));
 el<HTMLSelectElement>('pose-confidence').append(...confidences.map(c => new Option(c, c)));
 el('pose-mark').onclick = () => { const ligar = posePick === 'idle'; if (ligar) poseDraft = null; setPosePick(ligar ? 'point' : 'idle'); };
+el('pose-leave').onclick = () => { setPosePick('idle'); notify('A planta voltou a medir cotas. A pose marcada continua no editor até você salvar.'); };
+el<HTMLInputElement>('pose-heading').oninput = () => drawMarkers();
 el('pose-save').onclick = () => savePose('proposto');
 el('pose-confirm').onclick = () => savePose('confirmado');
 el('pose-compare').onclick = () => setComparing(!comparing);

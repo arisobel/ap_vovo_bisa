@@ -1,6 +1,6 @@
 import { azimuthBetween, pixelDistance, type Point } from './spatial';
 
-export type PosePick = 'idle' | 'point' | 'heading';
+export type PosePick = 'idle' | 'point' | 'heading' | 'done';
 export type PlanClick =
   | { target: 'calibration'; point: Point }
   | { target: 'pose-point'; point: Point }
@@ -21,5 +21,8 @@ export function routePlanClick(pick: PosePick, draft: Point | null, point: Point
     if (pixelDistance(draft, point) < MIN_HEADING_PIXELS) return { target: 'ignored', reason: 'Clique mais longe do ponto da câmera para definir a direção.' };
     return { target: 'pose-heading', headingDeg: azimuthBetween(draft, point) };
   }
+  // Depois de marcar, a planta NAO volta sozinha a medir cota: seria um clique de distancia
+  // apagar a marcacao recem-feita sem que ninguem percebesse.
+  if (pick === 'done') return { target: 'ignored', reason: 'Ponto e direção já marcados. Use “Refazer ponto e direção” para marcar de novo, ou “Voltar a medir cotas”.' };
   return { target: 'calibration', point };
 }

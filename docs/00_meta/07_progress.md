@@ -1,5 +1,17 @@
 # Progresso
 
+## 07/09/2026 — A direção da foto passou a ter mira, e a marcação passou a ter fim
+
+Primeiro uso real da marcação, segunda rodada. Duas falhas apareceram juntas: o passo da direção não desenhava nada (a seta só era desenhada para uma pose já salva, nunca para o rascunho), então não havia como ver o que se estava escolhendo; e depois do segundo clique a planta voltava sozinha a medir cotas, de modo que os cliques seguintes viravam pontos A e B sem aviso.
+
+Agora, no passo 2, uma **seta tracejada sai do ponto e segue o cursor**, com a ponta desenhada e o ângulo em graus escrito ao lado. O cabeçalho da planta numera os passos ("passo 1 de 2", "passo 2 de 2"). Depois do clique a seta fica cheia e o azimute continua desenhado a partir do rascunho, lendo o próprio campo — digitar um valor no campo redesenha a seta.
+
+O `PosePick` ganhou o estado `done`: marcado o ponto e a direção, a planta **não** volta a medir cotas por conta própria. Clique nela avisa o que fazer; para medir de novo é preciso pedir, pelo botão **Voltar a medir cotas**, por **Esc**, ou trocando de aba na calibração. Regra em `routePlanClick`, com teste.
+
+83 testes passam; TypeScript e build limpos. Nada disso foi aberto em navegador por quem construiu.
+
+Próximo passo: marcar as fotos da sala, o ambiente com mais registros e o único já reconhecido com segurança.
+
 ## 06/09/2026 — Correção da F2: a planta passa a ter um modo por vez
 
 No primeiro uso real da marcação, os cliques da pose e os pontos A e B da cota se misturaram na mesma superfície: o marcador verde da câmera e o marcador laranja da cota apareciam juntos, e um clique depois da marcação começava uma cota nova sem aviso, com a ajuda ainda dizendo "Ponto A marcado".

@@ -54,6 +54,12 @@ describe('modo da planta', () => {
     }
   });
 
+  it('não volta sozinha a medir cota depois de marcar', () => {
+    const acao = routePlanClick('done', A, { u: 10, v: 10 });
+    expect(acao.target).toBe('ignored');
+    expect(acao.target === 'ignored' && acao.reason).toMatch(/Refazer ponto e direção/);
+  });
+
   it('recusa direção sem ponto e cliques colados no ponto', () => {
     expect(routePlanClick('heading', null, A).target).toBe('ignored');
     expect(routePlanClick('heading', A, { u: A.u + 3, v: A.v + 3 }).target).toBe('ignored');

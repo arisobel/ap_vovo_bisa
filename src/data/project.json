@@ -24,9 +24,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "bh-social",
+      "pose": {
+        "u": 215.54,
+        "v": 241.24,
+        "cameraHeight": 1.55,
+        "headingDeg": 270,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "Banheiro social não tem banheira"
+      },
+      "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
     },
     {
@@ -37,9 +46,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "cozinha",
+      "pose": {
+        "u": 85.42,
+        "v": 394.47,
+        "cameraHeight": 1.55,
+        "headingDeg": 357,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "baixa",
+        "evidence": "olhando Da cozinha para o corredor"
+      },
+      "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
     },
     {
@@ -50,9 +68,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "almoco",
+      "pose": {
+        "u": 100.24,
+        "v": 617.68,
+        "cameraHeight": 1.55,
+        "headingDeg": 0,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "De dentro da sala de Almoço, olhando em direção a cozinha."
+      },
+      "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
     },
     {
@@ -63,9 +90,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "corredor-sul",
+      "pose": {
+        "u": 253.42,
+        "v": 344.27,
+        "cameraHeight": 1.55,
+        "headingDeg": 268,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "Do corredor olhando para o lavabo."
+      },
+      "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
     },
     {
@@ -76,10 +112,19 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
-      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+      "roomId": "dormitorio-1",
+      "pose": {
+        "u": 228.71,
+        "v": 161.33,
+        "cameraHeight": 1.55,
+        "headingDeg": 270,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "De dentro do Dormitório 1 olhando o Banheiro da Suíte"
+      },
+      "status": "confirmado",
+      "observations": "do Dormitório 1 olhando o Banheiro da Suíte"
     },
     {
       "id": "foto_quarto_01",
@@ -89,10 +134,19 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
-      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+      "roomId": "dormitorio-1",
+      "pose": {
+        "u": 248.48,
+        "v": 154.86,
+        "cameraHeight": 1.55,
+        "headingDeg": 61,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "De dentro do dormmitório da suíte (dormitório1) olhando para a janela, de forma oblíqua."
+      },
+      "status": "confirmado",
+      "observations": "De dentro do dormmitório da suíte (dormitório1) olhando para a janela."
     },
     {
       "id": "foto_quarto_02",
@@ -102,9 +156,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "corredor-norte",
+      "pose": {
+        "u": 245.18,
+        "v": 306.39,
+        "cameraHeight": 1.55,
+        "headingDeg": 90,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "olhando desde o corredor para dentro do quarto , Dormitório 1"
+      },
+      "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
     },
     {
@@ -115,9 +178,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "corredor-sul",
+      "pose": {
+        "u": 255.07,
+        "v": 370.44,
+        "cameraHeight": 1.55,
+        "headingDeg": 96,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "Escritório, observado desde a porta do corredor sul."
+      },
+      "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
     },
     {
@@ -128,9 +200,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "living",
+      "pose": {
+        "u": 121.66,
+        "v": 669.96,
+        "cameraHeight": 1.55,
+        "headingDeg": 109,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "media",
+        "evidence": "Está olhando exatamente para essa Direção"
+      },
+      "status": "confirmado",
       "observations": "Visão da Sala, olhando em direção a Varanda."
     },
     {
@@ -141,9 +222,18 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
+      "roomId": "living",
+      "pose": {
+        "u": 258.36,
+        "v": 577.66,
+        "cameraHeight": 1.55,
+        "headingDeg": 162,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "olhando para a varanda da parte curta do L"
+      },
+      "status": "confirmado",
       "observations": "parquet em espinha, esquadria clara na fachada sul"
     },
     {
@@ -154,10 +244,19 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": null,
-      "pose": null,
-      "status": "pendente",
-      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+      "roomId": "living",
+      "pose": {
+        "u": 334.12,
+        "v": 608.77,
+        "cameraHeight": 1.55,
+        "headingDeg": 240,
+        "pitchDeg": 0,
+        "verticalFovDeg": 55,
+        "confidence": "alta",
+        "evidence": "Olhando para a janela do fundo da sala da bifurcação do L"
+      },
+      "status": "confirmado",
+      "observations": "Olhando para a janela do fundo da sala da bifurcação do L"
     }
   ],
   "calibration": {
@@ -174,13 +273,6 @@
       ],
       "distanceMeters": 9.12
     },
-    "transform": {
-      "origin": {
-        "u": 52,
-        "v": 761
-      },
-      "metersPerPixel": 0.02658892128279883
-    },
     "check": {
       "points": [
         {
@@ -193,6 +285,13 @@
         }
       ],
       "distanceMeters": 6.53
+    },
+    "transform": {
+      "origin": {
+        "u": 52,
+        "v": 761
+      },
+      "metersPerPixel": 0.02658892128279883
     },
     "status": "proposto"
   }

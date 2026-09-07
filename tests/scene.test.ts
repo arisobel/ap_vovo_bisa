@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, headingFromYaw, openingParts, poseRotation, resolveCollision, startingPoint, wallBlocks } from '../src/scene/preview';
+import { barriersFrom, fixtureBlock, headingFromYaw, openingParts, poseRotation, resolveCollision, startingPoint, wallBlocks } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
 
@@ -226,5 +226,35 @@ describe('esquadrias', () => {
     expect(antes).toBeGreaterThan(0);
     // barriersFrom lê apenas wallBlocks; openingParts é decoração.
     expect(barriersFrom(salas)).toHaveLength(antes);
+  });
+});
+
+describe('mobília na cena', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+  const salas = deriveApartment(initialApartment(), transform);
+
+  it('só entra na colisão quando a mobília está visível', () => {
+    const vazio = barriersFrom(salas);
+    const mobiliado = barriersFrom(salas, 1.8, true);
+    const pecas = salas.flatMap(r => r.fixtures).filter(f => f.base < 1.8 && f.base + f.height > 0);
+    expect(pecas.length).toBeGreaterThan(0);
+    expect(mobiliado.length - vazio.length).toBe(pecas.length);
+  });
+
+  it('põe a peça em pé no lugar certo do mundo', () => {
+    const banheira = salas.find(r => r.id === 'bh-suite')!.fixtures.find(f => f.id === 'bhsuite-banheira')!;
+    const bloco = fixtureBlock(banheira);
+    expect(bloco.position[1]).toBeCloseTo(banheira.base + banheira.height / 2, 9);
+    expect(bloco.size[1]).toBeCloseTo(banheira.height, 9);
+    expect(bloco.position[0]).toBeCloseTo(banheira.center.x, 9);
+  });
+
+  it('não põe quem caminha dentro de um móvel', () => {
+    const partida = startingPoint(salas)!;
+    for (const sala of salas) for (const f of sala.fixtures) {
+      const dentroX = Math.abs(partida.x - f.center.x) < f.size.width / 2;
+      const dentroZ = Math.abs(partida.z - f.center.z) < f.size.depth / 2;
+      expect(dentroX && dentroZ, f.id).toBe(false);
+    }
   });
 });

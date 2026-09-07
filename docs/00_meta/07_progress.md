@@ -1,5 +1,21 @@
 # Progresso
 
+## 07/09/2026 — F4, segunda parte: as duas versões, vazia e mobiliada
+
+O usuário respondeu a pendência 6 do PRD ao ver a cena com acabamentos: quer **as duas versões**, vazia e mobiliada, alternáveis. É a primeira vez que essa preferência sai do default proposto e vira decisão registrada (D017).
+
+A mobília é uma lista por cômodo, com pegada retangular em **pixels da planta**, altura e base em metros, material nomeado e evidência obrigatória. Pixels pelo mesmo motivo das poses: recalibrar move os móveis junto com as paredes. Cada peça declara `loose`, para separar móvel solto de elemento fixo mais tarde sem remexer nos dados; hoje só a geladeira é solta.
+
+Dezesseis peças entraram. Onze vêm do desenho da planta, lidas com grade de coordenadas sobre a imagem ampliada — mesmo método e mesma fonte do traçado das paredes: banheira, vaso, bidê e bancada no BH da suíte; vaso, bidê, bancada, armário e box no BH social; vaso e cuba no BH de serviço; cuba e vaso no lavabo. A varredura automática por componentes conexas foi tentada e descartada: ela junta louça, texto do rótulo e arco de porta num só borrão, o mesmo problema já registrado para a detecção automática de cômodos.
+
+As cinco restantes vêm das fotografias, e é aqui que as poses da F2 começam a pagar: `foto_cozinha_01` foi marcada no ALMOÇO olhando ao norte, então a bancada que aparece à esquerda do quadro está na face oeste e a geladeira à direita está na leste. Sem a pose, isso seria chute.
+
+A mobília entra na colisão **apenas quando visível**, e há teste que compara as contagens de barreira com e sem: a versão vazia continua exatamente a de antes, que é a não regressão exigida pelo critério da F4.
+
+O que ficou de fora, e por quê: o armário embutido do escritório, porque `foto_quarto_03` mostra um armário do piso ao teto com profundidade de armário, enquanto o traçado registra que a cota impressa de 3,67 é o vão livre entre dois embutidos de 0,27 m, profundidade de estante — as duas leituras não se conciliam sem medição. E no BH social a planta desenha dois retângulos cruzados lado a lado; a foto mostra um armário amarelo e um box de vidro fumê, mas nenhuma das fontes diz qual está em qual, então a ordem adotada pode estar trocada. Ambos em KNOWN_ISSUES.
+
+114 testes passam; TypeScript e build limpos.
+
 ## 07/09/2026 — F4, primeira parte: acabamentos lidos das fotos e esquadrias
 
 O PRD proíbe esticar fotografia sobre parede como textura e pede materiais simples. Então a cor veio das fotos por amostragem, não por projeção.

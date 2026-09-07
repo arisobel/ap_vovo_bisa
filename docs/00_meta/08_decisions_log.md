@@ -38,6 +38,18 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D017 - Duas versões, vazia e mobiliada, com a mobília em pixels da planta (07/09/2026)
+
+O PRD, seção 9, item 6, pedia confirmar a preferência visual: vazio, mobiliário existente ou ambos. O usuário respondeu **ambos** em 07/09/2026, ao ver a cena com acabamentos.
+
+Decisao: a mobília é uma lista por cômodo, com pegada retangular alinhada aos eixos **em pixels da planta**, altura e base em metros, material nomeado e evidência obrigatória. Pixels pelo mesmo motivo das poses fotográficas (D012): recalibrar move os móveis junto com as paredes, em vez de deixá-los para trás. A pegada é retangular porque os contornos também são ortogonais; nenhuma peça precisa de rotação hoje.
+
+Cada peça declara `loose`: móvel solto, que pode ter mudado de lugar, contra elemento fixo. Hoje só a geladeira é solta. O campo existe para separar as duas coisas mais tarde sem remexer nos dados; a alternância atual é uma só, com e sem mobília.
+
+A mobília entra na colisão apenas quando está visível: `barriersFrom` recebe a mobília por parâmetro, e há teste que compara as contagens com e sem. Assim a versão vazia continua exatamente como era, o que é a garantia de não regressão que a F4 exige.
+
+Alternativa descartada: mobília em metros, como um cenário à parte da planta. Quebraria na primeira recalibração e separaria a evidência do desenho que a originou.
+
 ## D016 - Cor de acabamento é material nomeado, amostrado da foto e corrigido pelo branco dela (07/09/2026)
 
 O PRD proíbe esticar uma fotografia sobre a parede como textura ortogonal e pede materiais simples. Restava decidir de onde vem cada cor.

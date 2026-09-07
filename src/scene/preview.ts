@@ -6,7 +6,11 @@ type Trecho = { start: number; end: number; base: number; height: number };
 type Vao = { type: 'door' | 'window'; offset: number; width: number; base: number; height: number };
 export type SceneWall = { id: string; start: Ponto; end: Ponto; height: number; thickness: number; openings: Vao[]; pieces: Trecho[] };
 export type ScenePalette = { floor: string; wall: string; ceiling: string };
-export type SceneRoom = { id: string; name: string; verification: 'cota-impressa' | 'sem-cota'; finishes: ScenePalette; contour: Ponto[]; walls: SceneWall[] };
+export type SceneFixture = {
+  id: string; kind: string; loose: boolean; color: string;
+  center: Ponto; size: { width: number; depth: number }; base: number; height: number;
+};
+export type SceneRoom = { id: string; name: string; verification: 'cota-impressa' | 'sem-cota'; finishes: ScenePalette; contour: Ponto[]; walls: SceneWall[]; fixtures: SceneFixture[] };
 // 'materiais' pinta com os acabamentos lidos nas fotos; 'conferencia' volta às cores que
 // distinguem cômodo com cota impressa de cômodo sem cota. As duas leituras são úteis.
 export type PaletteMode = 'materiais' | 'conferencia';
@@ -19,6 +23,7 @@ export type PreviewHandle = {
   exitWalk(): void;
   viewFromPose(pose: PoseView | null): void;
   setPalette(mode: PaletteMode): void;
+  setFurniture(visible: boolean): void;
   setWalkListener(listener: (state: WalkState | null) => void): void;
   dispose(): void;
 };
@@ -42,6 +47,15 @@ export function headingFromYaw(yaw: number): number {
 }
 
 export type WallBlock = { position: [number, number, number]; size: [number, number, number]; rotationY: number };
+
+// Uma peça de mobília vira uma caixa alinhada aos eixos: a pegada é retangular por contrato.
+export function fixtureBlock(fixture: SceneFixture): WallBlock {
+  return {
+    position: [fixture.center.x, fixture.base + fixture.height / 2, fixture.center.z],
+    size: [fixture.size.width, fixture.height, fixture.size.depth],
+    rotationY: 0,
+  };
+}
 
 export type OpeningPart = WallBlock & { part: 'frame' | 'glass' };
 
@@ -123,9 +137,16 @@ export type Barrier = { cx: number; cz: number; halfW: number; halfD: number; an
 
 // Só barra quem o corpo encontra. A verga sobre a porta fica acima da cabeça e deixa passar;
 // o peitoril sob a janela fica na altura da cintura e não deixa.
-export function barriersFrom(rooms: SceneRoom[], bodyTop = ALTURA_CORPO): Barrier[] {
+export function barriersFrom(rooms: SceneRoom[], bodyTop = ALTURA_CORPO, comMobilia = false): Barrier[] {
   const barreiras: Barrier[] = [];
   for (const room of rooms) {
+    if (comMobilia) for (const fixture of room.fixtures) {
+      const bloco = fixtureBlock(fixture);
+      const base = bloco.position[1] - bloco.size[1] / 2;
+      const topo = bloco.position[1] + bloco.size[1] / 2;
+      if (base >= bodyTop || topo <= 0) continue;
+      barreiras.push({ cx: bloco.position[0], cz: bloco.position[2], halfW: bloco.size[0] / 2, halfD: bloco.size[2] / 2, angle: 0 });
+    }
     for (const wall of room.walls) {
       for (const bloco of wallBlocks(wall)) {
         const base = bloco.position[1] - bloco.size[1] / 2;
@@ -233,7 +254,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   try { renderer = new WebGLRenderer({ antialias: true, alpha: false }); }
   catch {
     report('WebGL indisponível. A planta, a calibração e as fotos continuam disponíveis.');
-    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setWalkListener() {}, dispose() {} };
+    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setWalkListener() {}, dispose() {} };
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   host.prepend(renderer.domElement);
@@ -251,8 +272,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const grade = new GridHelper(16, 16, '#bcc9bd', '#d8dfd3');
   scene.add(grade);
   const pisos = new Group();
+  const moveis = new Group();
   const paredes = new Group();
-  scene.add(pisos, paredes);
+  scene.add(pisos, paredes, moveis);
 
   const camera = new PerspectiveCamera(42, 1, 0.1, 400);
   camera.position.set(11, 12, 13);
@@ -279,6 +301,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const materialEsquadria = new MeshLambertMaterial({ color: ESQUADRIA });
   const materialVidro = new MeshLambertMaterial({ color: VIDRO, transparent: true, opacity: .34 });
   let paleta: PaletteMode = 'materiais';
+  let comMobilia = true;
   let ultimasSalas: SceneRoom[] | null = null;
 
   let limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 };
@@ -339,6 +362,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     viewFromPose(null);
     limpar(pisos);
     limpar(paredes);
+    limpar(moveis);
     grade.visible = !rooms || rooms.length === 0;
     barreiras = []; partida = null;
     if (!rooms || rooms.length === 0) { limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 }; frame(); return; }
@@ -346,10 +370,16 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     for (const room of rooms) {
       montarPiso(room);
       for (const wall of room.walls) montarParede(wall, room);
+      if (comMobilia) for (const fixture of room.fixtures) {
+        const bloco = fixtureBlock(fixture);
+        const mesh = new Mesh(new BoxGeometry(bloco.size[0], bloco.size[1], bloco.size[2]), material(fixture.color));
+        mesh.position.set(bloco.position[0], bloco.position[1], bloco.position[2]);
+        moveis.add(mesh);
+      }
       for (const p of room.contour) { xs.push(p.x); zs.push(p.z); }
     }
     limites = { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
-    barreiras = barriersFrom(rooms);
+    barreiras = barriersFrom(rooms, ALTURA_CORPO, comMobilia);
     partida = startingPoint(rooms);
     frame();
   }
@@ -492,6 +522,11 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   return {
     show, setWallsVisible, lookFromTop, frame, enterWalk, exitWalk, viewFromPose,
     setWalkListener(listener) { avisarPasseio = listener; },
+    setFurniture(visible) {
+      if (visible === comMobilia) return;
+      comMobilia = visible;
+      if (ultimasSalas) show(ultimasSalas);
+    },
     setPalette(mode) {
       if (mode === paleta) return;
       paleta = mode;

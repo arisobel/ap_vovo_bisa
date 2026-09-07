@@ -53,7 +53,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </article>
       <article class="panel visual-panel">
         <div class="panel-heading"><div><span class="step">02</span><h2>Visualização</h2></div><button id="show-3d" hidden>Voltar à visão 3D</button><span id="visual-badge" class="badge">Sem escala definida</span></div>
-        <div class="plan-tools" id="scene-tools" hidden><span id="scene-info"></span><div><button id="scene-walk" class="primary">Andar por dentro</button><button id="scene-frame">Enquadrar</button><button id="scene-top">Vista superior</button><button id="scene-walls" aria-pressed="true">Ocultar paredes</button><button id="scene-palette" aria-pressed="true">Cores: acabamento</button></div></div>
+        <div class="plan-tools" id="scene-tools" hidden><span id="scene-info"></span><div><button id="scene-walk" class="primary">Andar por dentro</button><button id="scene-frame">Enquadrar</button><button id="scene-top">Vista superior</button><button id="scene-walls" aria-pressed="true">Ocultar paredes</button><button id="scene-palette" aria-pressed="true">Cores: acabamento</button><button id="scene-furniture" aria-pressed="true">Com mobília</button></div></div>
         <div id="preview"><div class="preview-note" id="preview-note"><span class="cube-icon">◇</span><p class="eyebrow">CADA MEMÓRIA TEM SEU ESPAÇO</p><h3>O apartamento começa<br>pela planta.</h3><p>Defina a escala ao lado para levantar<br>as paredes do traçado.<br>Sem escala não há metro, e sem metro<br>não há parede.</p><span class="subtle-pill">Grade ilustrativa · sem geometria do imóvel</span></div><p id="webgl-status" class="webgl-status" role="status"></p></div>
         <div id="photo-view" hidden><div class="photo-stage" id="photo-stage"><img id="large-photo" alt=""><p id="photo-error" class="error" hidden></p></div><div class="photo-description"><p class="eyebrow">FOTOGRAFIA ORIGINAL</p><h3 id="photo-title"></h3><p id="photo-meta"></p><p id="photo-state" class="muted"></p><label for="observations">Observações da referência</label><textarea id="observations" rows="2" maxlength="5000"></textarea><button id="save-notes">Salvar observações no rascunho</button><details id="pose-editor"><summary>Ambiente, ponto e direção</summary><label for="pose-room">Ambiente</label><select id="pose-room"></select><div class="measure-row"><button id="pose-mark" type="button">Marcar ponto e direção na planta</button><button id="pose-leave" hidden>Voltar a medir cotas</button><button id="pose-clear" type="button">Limpar pose</button></div><p id="pose-help" class="muted"></p><div class="point-inputs"><label>Altura da câmera (m)<input id="pose-height" type="number" step="0.05" min="0.3" max="2.5"></label><label>Azimute (°)<input id="pose-heading" type="number" step="1" min="0" max="359"></label><label>Inclinação (°)<input id="pose-pitch" type="number" step="1" min="-60" max="60"></label><label>Campo vertical (°)<input id="pose-fov" type="number" step="1" min="20" max="100"></label></div><label for="pose-confidence">Confiança da associação</label><select id="pose-confidence"></select><label for="pose-evidence">Evidência (por que esta foto é deste ponto)</label><textarea id="pose-evidence" rows="2" maxlength="5000"></textarea><div class="measure-row"><button id="pose-save" class="primary" type="button">Salvar como proposta</button><button id="pose-confirm" type="button">Confirmar</button><button id="pose-compare" type="button">Comparar com o modelo</button></div></details></div></div>
         <div class="visual-footer"><span class="dot"></span><span>Uma reconstrução aproximada, guiada por evidências.</span></div>
@@ -418,7 +418,7 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     walking = ativo;
     el('scene-walk').textContent = ativo ? 'Sair do passeio (Esc)' : 'Andar por dentro';
     el('scene-walk').classList.toggle('primary', !ativo);
-    for (const id of ['scene-frame', 'scene-top', 'scene-walls', 'scene-palette']) el<HTMLButtonElement>(id).disabled = ativo;
+    for (const id of ['scene-frame', 'scene-top', 'scene-walls', 'scene-palette', 'scene-furniture']) el<HTMLButtonElement>(id).disabled = ativo;
     el('scene-info').textContent = ativo
       ? 'Passeio: W A S D ou setas para andar, mouse para olhar, Shift para acelerar, Esc para sair. Olhos a 1,60 m do piso. A seta laranja na planta mostra onde você está e para onde olha.'
       : sceneInfo;
@@ -426,6 +426,16 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
   el('scene-walk').onclick = () => (walking ? scene?.exitWalk() : scene?.enterWalk());
   el('scene-frame').onclick = () => scene?.frame();
   el('scene-top').onclick = () => scene?.lookFromTop();
+  el('scene-furniture').onclick = () => {
+    const button = el('scene-furniture');
+    const com = button.getAttribute('aria-pressed') !== 'true';
+    button.setAttribute('aria-pressed', String(com));
+    button.textContent = com ? 'Com mobília' : 'Sem mobília';
+    scene?.setFurniture(com);
+    notify(com
+      ? 'Mobília visível: louças e bancadas traçadas na planta, mais o que as fotografias mostram. Tudo proposto, nada medido.'
+      : 'Apartamento vazio: só estrutura, vãos e acabamentos.');
+  };
   el('scene-palette').onclick = () => {
     const button = el('scene-palette');
     const materiais = button.getAttribute('aria-pressed') !== 'true';

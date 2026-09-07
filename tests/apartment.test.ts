@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkDeviation, checkTolerance, deriveApartment, deriveRoom, findRoom, initialApartment, palette, validateApartment, wallPieces } from '../src/data/pilot';
+import { checkDeviation, checkTolerance, containsPoint, deriveApartment, deriveRoom, findRoom, initialApartment, palette, validateApartment, wallPieces } from '../src/data/pilot';
 import { calibrate } from '../src/plan/spatial';
 
 // Escala proposta pela cota 9,12 m da fachada sul do living. Não é medida conferida em campo.
@@ -240,5 +240,66 @@ describe('acabamentos', () => {
     expect(cor('living')).not.toBe(cor('dormitorio-1'));
     expect(cor('dormitorio-1')).toBe(cor('escritorio'));
     expect(cor('cozinha')).toBe(cor('area-servico'));
+  });
+});
+
+describe('mobília', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+
+  it('cabe dentro do cômodo, abaixo do pé-direito, com material e evidência', () => {
+    const apartment = initialApartment();
+    const alturaMax = apartment.parameters.wallHeight.value;
+    let total = 0;
+    for (const room of apartment.rooms) for (const f of room.fixtures) {
+      total += 1;
+      const { u, v, width, depth } = f.footprint;
+      for (const canto of [{ u: u + .1, v: v + .1 }, { u: u + width - .1, v: v + depth - .1 }]) {
+        expect(containsPoint(room.contour, canto), `${f.id} fora de ${room.id}`).toBe(true);
+      }
+      expect(f.base + f.height, f.id).toBeLessThanOrEqual(alturaMax + 1e-9);
+      expect(apartment.materials[f.material], `${f.id} sem material`).toBeDefined();
+      expect(f.evidence.trim().length, `${f.id} sem evidência`).toBeGreaterThan(0);
+    }
+    expect(total).toBeGreaterThan(0);
+  });
+
+  it('deriva a peça em metros pela mesma transformação das paredes', () => {
+    const apartment = initialApartment();
+    const banheiro = deriveRoom(findRoom(apartment, 'bh-suite'), apartment.parameters, apartment.materials, transform);
+    const banheira = banheiro.fixtures.find(f => f.id === 'bhsuite-banheira')!;
+    expect(banheira.size.width).toBeCloseTo(28 * transform.metersPerPixel, 9);
+    expect(banheira.size.depth).toBeCloseTo(73 * transform.metersPerPixel, 9);
+    expect(banheira.color).toBe(apartment.materials['louca-salmao'].color);
+  });
+
+  it('recusa móvel que atravessa a parede', () => {
+    const apartment = structuredClone(initialApartment()) as any;
+    apartment.rooms.find((r: any) => r.id === 'bh-suite').fixtures[0].footprint.width = 400;
+    expect(() => validateApartment(apartment)).toThrow(/não cabe dentro do contorno/);
+  });
+
+  it('recusa móvel mais alto que o pé-direito, tipo desconhecido e material inexistente', () => {
+    const alto = structuredClone(initialApartment()) as any;
+    alto.rooms.find((r: any) => r.id === 'bh-suite').fixtures[0].height = 3.2;
+    expect(() => validateApartment(alto)).toThrow(/passa do pé-direito/);
+    const tipo = structuredClone(initialApartment()) as any;
+    tipo.rooms.find((r: any) => r.id === 'bh-suite').fixtures[0].kind = 'jacuzzi';
+    expect(() => validateApartment(tipo)).toThrow(/tipo de mobília desconhecido/);
+    const material = structuredClone(initialApartment()) as any;
+    material.rooms.find((r: any) => r.id === 'bh-suite').fixtures[0].material = 'ouro';
+    expect(() => validateApartment(material)).toThrow(/material inexistente/);
+  });
+
+  it('aceita cômodo sem mobília declarada', () => {
+    const apartment = structuredClone(initialApartment()) as any;
+    for (const room of apartment.rooms) delete room.fixtures;
+    expect(validateApartment(apartment).rooms.every(r => r.fixtures.length === 0)).toBe(true);
+  });
+
+  it('marca a geladeira como móvel solto e as louças como fixas', () => {
+    const apartment = initialApartment();
+    const todas = apartment.rooms.flatMap(r => r.fixtures);
+    expect(todas.filter(f => f.loose).map(f => f.id)).toEqual(['cozinha-geladeira']);
+    expect(todas.filter(f => f.kind === 'vaso').every(f => !f.loose)).toBe(true);
   });
 });

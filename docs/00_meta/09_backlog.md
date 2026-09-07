@@ -23,9 +23,10 @@
 ## F3 / F4
 - Passeio e colisão implementados; falta revisar em navegador e sincronizar a posição do caminhante com a planta 2D.
 - Modelar folha de porta ou marcar visualmente o vão: hoje todo vão é atravessável.
+- Mobília ainda não traçada: armário embutido do escritório (ver KNOWN_ISSUES: a foto mostra armário profundo, o traçado registra embutidos de 0,27 m), armários da área de serviço e do corredor de serviço, tanque, sofá e escrivaninha do escritório, e o que houver nos dormitórios.
+- Mobília desenhada como caixa: banheira, vaso e cuba são blocos retangulares com a cor da louça. Forma real exige geometria por tipo de peça.
 - Estampas e desenhos de acabamento: o parquete em espinha, a flor do azulejo e a junta da cerâmica são cor lisa hoje. Exige textura procedural ou imagem derivada, com identificação de derivada.
 - Rodapés, folhas de porta, louças e armários embutidos. Folha de porta muda a navegação e precisa de decisão antes: hoje todo vão é passagem livre.
-- Confirmar com o usuário a preferência visual do PRD, seção 9, item 6: vazio, mobiliário existente ou ambos.
 - Vazios do gradil: hoje o guarda-corpo do terraço é um parapeito maciço de 1,10 m. Desenhar os montantes exige geometria de balaústre, não só altura, e cabe junto com materiais na F4.
 - Medir no local a altura do gradil, a espessura de parede, o peitoril e a altura de janela. `railingHeight` é a segunda altura do projeto e continua estimada.
 - Materiais/objetos fixos após validação estrutural.

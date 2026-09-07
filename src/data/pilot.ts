@@ -20,9 +20,20 @@ export type Verification = 'cota-impressa' | 'sem-cota';
 export type Material = { color: string; status: 'proposto' | 'confirmado'; evidence: string };
 export type Finishes = { floor: string; wall: string; ceiling: string; evidence: string };
 export type Palette = { floor: string; wall: string; ceiling: string };
+// Peça de mobília. A pegada é retangular e alinhada aos eixos, em pixels da planta, como o
+// contorno dos cômodos: recalibrar move os móveis junto com as paredes.
+export type Footprint = { u: number; v: number; width: number; depth: number };
+export type FixtureKind = 'banheira' | 'vaso' | 'bide' | 'cuba' | 'bancada' | 'armario' | 'box' | 'geladeira';
+export type Fixture = {
+  id: string; kind: FixtureKind; footprint: Footprint;
+  base: number; height: number; material: string;
+  // loose = móvel solto, que pode ter mudado de lugar. false = elemento fixo.
+  loose: boolean; status: 'proposto' | 'confirmado'; evidence: string;
+};
+export const fixtureKinds: FixtureKind[] = ['banheira', 'vaso', 'bide', 'cuba', 'bancada', 'armario', 'box', 'geladeira'];
 // Usado quando o arquivo não declara acabamento, para que as bases anteriores continuem válidas.
 export const defaultFinishes: Finishes = { floor: 'piso-externo', wall: 'parede-branca', ceiling: 'teto-branco', evidence: 'Acabamento não declarado no arquivo; neutro adotado.' };
-export type Room = { id: string; name: string; status: 'proposto'; verification: Verification; evidence: string; finishes: Finishes; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
+export type Room = { id: string; name: string; status: 'proposto'; verification: Verification; evidence: string; finishes: Finishes; fixtures: Fixture[]; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
 export type Apartment = { schemaVersion: 2; planId: string; planWidth: number; planHeight: number; convention: string; parameters: Parameters; materials: Record<string, Material>; rooms: Room[] };
 export const parameterNames: ParameterName[] = ['wallHeight', 'railingHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight'];
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(`Estrutura: ${message}`); }
@@ -99,6 +110,39 @@ function validateFinishes(value: unknown, materiais: Record<string, Material>, r
   return acabamento;
 }
 
+// A pegada tem de caber dentro do contorno do cômodo: móvel não atravessa parede.
+function validateFixtures(value: unknown, parameters: Parameters, materiais: Record<string, Material>, contour: Point[], roomId: string): Fixture[] {
+  if (value === undefined || value === null) return [];
+  assert(Array.isArray(value) && value.length <= 48, `lista de mobília inválida em ${roomId}.`);
+  const ids = new Set<string>();
+  return value.map((item: unknown) => {
+    const f = record(item);
+    assert(identifier(f.id) && !ids.has(f.id as string), `ID de mobília inválido/duplicado em ${roomId}.`);
+    ids.add(f.id as string);
+    assert(fixtureKinds.includes(f.kind as FixtureKind), `tipo de mobília desconhecido em ${f.id}: ${String(f.kind)}.`);
+    const p = record(f.footprint);
+    assert(finite(p.u, 0, 1e5) && finite(p.v, 0, 1e5) && finite(p.width, 1, 1e5) && finite(p.depth, 1, 1e5), `pegada inválida em ${f.id}.`);
+    const u = p.u as number, v = p.v as number, w = p.width as number, d = p.depth as number;
+    // Cantos puxados um décimo de pixel para dentro da própria pegada: peça encostada na
+    // parede é o caso normal, e a parede é justamente o contorno.
+    const e = Math.min(.1, w / 4, d / 4);
+    for (const canto of [{ u: u + e, v: v + e }, { u: u + w - e, v: v + e }, { u: u + e, v: v + d - e }, { u: u + w - e, v: v + d - e }]) {
+      assert(containsPoint(contour, canto), `a mobília ${f.id} não cabe dentro do contorno de ${roomId}.`);
+    }
+    assert(finite(f.base, 0, 5) && finite(f.height, .01, 5), `altura inválida em ${f.id}.`);
+    assert((f.base as number) + (f.height as number) <= parameters.wallHeight.value + 1e-9, `a mobília ${f.id} passa do pé-direito.`);
+    assert(typeof f.material === 'string' && materiais[f.material] !== undefined, `material inexistente em ${f.id}: ${String(f.material)}.`);
+    assert(typeof f.loose === 'boolean', `${f.id} deve declarar se é móvel solto.`);
+    assert(f.status === 'proposto' || f.status === 'confirmado', `estado inválido em ${f.id}.`);
+    assert(evidence(f.evidence), `a mobília ${f.id} não registra evidência.`);
+    return {
+      id: f.id as string, kind: f.kind as FixtureKind, footprint: { u, v, width: w, depth: d },
+      base: f.base as number, height: f.height as number, material: f.material as string,
+      loose: f.loose as boolean, status: f.status as 'proposto' | 'confirmado', evidence: f.evidence as string,
+    };
+  });
+}
+
 function validateRoom(value: unknown, parameters: Parameters, materiais: Record<string, Material>, planWidth: number, planHeight: number): Room {
   const p = record(value);
   assert(identifier(p.id) && typeof p.name === 'string' && p.name.trim().length > 0 && p.status === 'proposto' && evidence(p.evidence), 'identificação, estado ou evidência do cômodo inválidos.');
@@ -138,6 +182,7 @@ function validateRoom(value: unknown, parameters: Parameters, materiais: Record<
     const slots = openings.filter(o => o.wallId === wall.id).sort((a, b) => a.offsetPixels - b.offsetPixels);
     for (let i = 1; i < slots.length; i++) assert(slots[i].offsetPixels >= slots[i - 1].offsetPixels + slots[i - 1].widthPixels, 'aberturas sobrepostas.');
   }
+  const fixtures = validateFixtures(p.fixtures, parameters, materiais, contour, p.id as string);
   assert(Array.isArray(p.checks) && p.checks.length <= 16, 'lista de conferências inválida.');
   // Só é dispensado de conferência o cômodo que declara não ter número impresso na planta.
   assert(p.verification === 'sem-cota' || p.checks.length > 0, `o cômodo ${p.id} declara conferência por cota impressa mas não registra nenhuma.`);
@@ -151,7 +196,7 @@ function validateRoom(value: unknown, parameters: Parameters, materiais: Record<
     assert(c.confidence === 'alta' || c.confidence === 'media', 'confiança da conferência inválida.');
     return { id: c.id, kind: c.kind, printed: c.printed, pixels: c.pixels, confidence: c.confidence, evidence: c.evidence };
   });
-  return { id: p.id, name: p.name, status: 'proposto', verification: p.verification, evidence: p.evidence, finishes, contour, walls, openings, checks };
+  return { id: p.id, name: p.name, status: 'proposto', verification: p.verification, evidence: p.evidence, finishes, contour, walls, openings, fixtures, checks };
 }
 
 export function validateApartment(value: unknown): Apartment {
@@ -232,8 +277,18 @@ export function deriveRoom(room: Room, parameters: Parameters, materials: Record
     const height = parameters[w.heightParameter].value;
     return { id: w.id, start, end, length, height, heightParameter: w.heightParameter, thickness: parameters.wallThickness.value, openings, pieces: wallPieces(length, height, openings) };
   });
+  const fixtures = room.fixtures.map(f => {
+    const a = planToWorld({ u: f.footprint.u, v: f.footprint.v }, transform);
+    const b = planToWorld({ u: f.footprint.u + f.footprint.width, v: f.footprint.v + f.footprint.depth }, transform);
+    return {
+      id: f.id, kind: f.kind, loose: f.loose, color: materials[f.material].color,
+      center: { x: (a.x + b.x) / 2, z: (a.z + b.z) / 2 },
+      size: { width: Math.abs(b.x - a.x), depth: Math.abs(b.z - a.z) },
+      base: f.base, height: f.height,
+    };
+  });
   const checks = room.checks.map(c => ({ ...c, ...checkDeviation(c, transform) }));
-  return { id: room.id, name: room.name, verification: room.verification, finishes: palette(room, materials), contour, walls, checks };
+  return { id: room.id, name: room.name, verification: room.verification, finishes: palette(room, materials), contour, walls, fixtures, checks };
 }
 
 export function deriveApartment(apartment: Apartment, transform: Transform) {

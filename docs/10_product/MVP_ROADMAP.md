@@ -14,7 +14,9 @@ Fase atual: F0 a F3 concluídas. A F4 entregou sua primeira parte em 07/09/2026:
 
 Entregue na F4: dez materiais nomeados com cor, estado e evidência; piso, parede e teto declarados por cômodo; batente em todo vão e vidro em toda janela; alternância entre as cores de acabamento e as cores de conferência, para não perder a leitura que distingue cômodo com cota impressa de cômodo sem cota.
 
-Falta na F4, e nenhuma parte foi começada: estampas e desenhos (o parquete em espinha e a flor do azulejo são cor lisa hoje), rodapés, folhas de porta, louças, armários embutidos e móveis soltos. Móveis soltos ficam por último por decisão do próprio PRD, seção 9, item 6, cujo default é estrutura e elementos fixos primeiro — o usuário ainda não confirmou essa preferência.
+Segunda parte da F4, em 07/09/2026: mobília, em duas versões. O usuário respondeu a pendência 6 do PRD — quer **vazio e mobiliado**, alternáveis. Dezesseis peças entraram: as louças e bancadas que a planta desenha nos quatro banheiros e no lavabo, mais a bancada, o armário e a geladeira da cozinha, estas lidas das fotografias com a pose marcada. Cada peça tem pegada em pixels da planta, material nomeado e evidência (D017).
+
+Falta na F4: estampas e desenhos (o parquete em espinha e a flor do azulejo são cor lisa hoje), rodapés, folhas de porta, e a mobília que ainda não foi traçada — armário do escritório, armários da área de serviço, tanque, sofá e escrivaninha. As peças modeladas são caixas retangulares com a cor da louça, não a forma real.
 
 A F2 passou em 07/09/2026: as 11 fotografias foram associadas a um ambiente, marcadas com ponto e direção na planta e **confirmadas pelo usuário**, cada uma com evidência escrita. Sete delas foram marcadas do cômodo vizinho olhando para dentro do alvo, o que é o registro correto: a pose diz onde a câmera estava, não o que a foto mostra.
 

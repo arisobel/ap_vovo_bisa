@@ -162,6 +162,7 @@
           "evidence": "Trecho fino na fachada inferior u=55..120 interpretado como janela; tipologia e extensão precisam de revisão. Foto sala_02 mostra janela adjacente ao acesso externo."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "living-cota-912",
@@ -269,6 +270,7 @@
           "evidence": "Interrupção da parede oeste entre v=366 e v=391, 26 px = 0,69 m, com arco de porta desenhado para o corredor."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "escritorio-cota-403",
@@ -427,6 +429,7 @@
           "evidence": "Interrupção da parede oeste entre v=152 e v=177, 26 px = 0,69 m, com arco de porta abrindo para fora. Dá no BH que fica a oeste, e não no corredor: o dormitório é suíte, e a porta sul é a que liga ao corredor. Mesmo vão físico registrado em bh-suite como porta-bh-suite."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "dorm1-cota-370",
@@ -534,6 +537,7 @@
           "evidence": "Interrupção da parede oeste entre v=295 e v=320, 26 px = 0,69 m, com arco de porta desenhado para o corredor."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "dorm2-cota-403",
@@ -663,6 +667,56 @@
           "evidence": "Interrupção da fachada oeste entre v=437 e v=491, 55 px = 1,46 m, no terço inferior do cômodo."
         }
       ],
+      "fixtures": [
+        {
+          "id": "cozinha-armario",
+          "kind": "armario",
+          "footprint": {
+            "u": 52,
+            "v": 360,
+            "width": 23,
+            "depth": 100
+          },
+          "base": 0,
+          "height": 0.86,
+          "material": "armario-mostarda",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Armário baixo com frentes mostarda sob a bancada, na face oeste. A planta não desenha a cozinha mobiliada; a posição vem da fotografia com a pose marcada: foto_cozinha_01 foi marcada no ALMOÇO olhando ao norte (azimute 0), e a bancada aparece à esquerda do quadro, logo na face oeste. Comprimento e profundidade são estimativa a partir da proporção da foto."
+        },
+        {
+          "id": "cozinha-bancada",
+          "kind": "bancada",
+          "footprint": {
+            "u": 52,
+            "v": 360,
+            "width": 23,
+            "depth": 100
+          },
+          "base": 0.86,
+          "height": 0.06,
+          "material": "bancada-granito",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Tampo de granito sobre o armário da face oeste, com cuba e torneira em foto_cozinha_01. Mesma posição e mesma incerteza de cozinha-armario."
+        },
+        {
+          "id": "cozinha-geladeira",
+          "kind": "geladeira",
+          "footprint": {
+            "u": 132,
+            "v": 362,
+            "width": 24,
+            "depth": 25
+          },
+          "base": 0,
+          "height": 1.75,
+          "material": "eletrodomestico-branco",
+          "loose": true,
+          "status": "proposto",
+          "evidence": "Geladeira branca à direita do quadro em foto_cozinha_01, portanto na face leste da cozinha, pela mesma leitura de pose usada na bancada. Único móvel solto desta entrega: pode ter mudado de lugar e não é elemento fixo."
+        }
+      ],
       "checks": [
         {
           "id": "cozinha-cota-280",
@@ -781,6 +835,7 @@
           "evidence": "Interrupção da fachada oeste entre v=537 e v=591, 55 px = 1,46 m. É a segunda das duas janelas da fachada oeste; a primeira é a da COZINHA."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "almoco-cota-280",
@@ -877,6 +932,7 @@
           "evidence": "Interrupção da divisória oeste entre v=65 e v=90, 26 px = 0,69 m, com arco de porta abrindo para a área de serviço. Mesmo vão físico registrado em area-servico como porta-servico-dormemp."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "dormemp-cota-248",
@@ -1029,6 +1085,7 @@
           "evidence": "A fachada oeste só tem parede escura em v=31..60 e v=292..359. Entre v=61 e v=291, 231 px = 6,14 m, o desenho mostra apenas linhas finas paralelas. Interpretado como envidraçamento contínuo da área de serviço; peitoril e altura são os parâmetros globais estimados, não medidas. Pode ser gradil ou tijolo de vidro em vez de janela."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "servico-cota-839",
@@ -1125,6 +1182,72 @@
           "evidence": "Interrupção da divisória leste entre v=152 e v=177, 26 px = 0,69 m. Mesmo vão de porta-dorm1-oeste: é esta porta que faz do DORMIT. 1 uma suíte e explica as duas portas daquele dormitório."
         }
       ],
+      "fixtures": [
+        {
+          "id": "bhsuite-banheira",
+          "kind": "banheira",
+          "footprint": {
+            "u": 110,
+            "v": 127,
+            "width": 28,
+            "depth": 73
+          },
+          "base": 0,
+          "height": 0.55,
+          "material": "louca-salmao",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Banheira encostada na face oeste, desenhada na planta como retângulo arredondado. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. 0,74 x 1,94 m na escala aplicada. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhsuite-vaso",
+          "kind": "vaso",
+          "footprint": {
+            "u": 150,
+            "v": 126,
+            "width": 16,
+            "depth": 20
+          },
+          "base": 0,
+          "height": 0.75,
+          "material": "louca-salmao",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Louça na face norte, à esquerda do par. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. O símbolo com caixa acoplada é lido como vaso; a planta não rotula, e nenhuma foto mostra este banheiro de frente. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhsuite-bide",
+          "kind": "bide",
+          "footprint": {
+            "u": 172,
+            "v": 126,
+            "width": 16,
+            "depth": 20
+          },
+          "base": 0,
+          "height": 0.55,
+          "material": "louca-salmao",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Louça na face norte, à direita do par. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Lida como bidê pelo símbolo, sem confirmação fotográfica. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhsuite-bancada",
+          "kind": "bancada",
+          "footprint": {
+            "u": 140,
+            "v": 181,
+            "width": 82,
+            "depth": 22
+          },
+          "base": 0,
+          "height": 0.85,
+          "material": "bancada-granito",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Bancada com cuba na face sul, da banheira até a parede leste. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Modelada como bloco cheio até 0,85 m porque a planta não diz se é suspensa. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        }
+      ],
       "checks": [
         {
           "id": "bhsuite-cota-303",
@@ -1211,6 +1334,88 @@
           "heightParameter": "doorHeight",
           "status": "proposto",
           "evidence": "Interrupção da divisória leste entre v=232 e v=257, 26 px = 0,69 m, dando no corredor."
+        }
+      ],
+      "fixtures": [
+        {
+          "id": "bhsocial-vaso",
+          "kind": "vaso",
+          "footprint": {
+            "u": 150,
+            "v": 210,
+            "width": 16,
+            "depth": 20
+          },
+          "base": 0,
+          "height": 0.75,
+          "material": "louca-salmao",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Louça na face norte, à esquerda do par, igual ao arranjo do BH da suíte. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhsocial-bide",
+          "kind": "bide",
+          "footprint": {
+            "u": 172,
+            "v": 210,
+            "width": 16,
+            "depth": 20
+          },
+          "base": 0,
+          "height": 0.55,
+          "material": "louca-salmao",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Louça na face norte, à direita do par. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhsocial-bancada",
+          "kind": "bancada",
+          "footprint": {
+            "u": 157,
+            "v": 265,
+            "width": 65,
+            "depth": 25
+          },
+          "base": 0,
+          "height": 0.85,
+          "material": "bancada-granito",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Bancada com cuba na face sul, a leste do par de retângulos cruzados. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhsocial-armario",
+          "kind": "armario",
+          "footprint": {
+            "u": 108,
+            "v": 262,
+            "width": 25,
+            "depth": 28
+          },
+          "base": 0,
+          "height": 2.0,
+          "material": "armario-amarelo",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "A planta desenha dois retângulos cruzados lado a lado no canto sudoeste. foto_banheiro_01 mostra, nesse lado do banheiro, exatamente um armário alto amarelo e um box de vidro fumê. Nenhuma das duas fontes diz qual está em qual retângulo: a ordem adotada aqui é proposta e pode estar trocada com bhsocial-box. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhsocial-box",
+          "kind": "box",
+          "footprint": {
+            "u": 134,
+            "v": 262,
+            "width": 23,
+            "depth": 28
+          },
+          "base": 0,
+          "height": 1.9,
+          "material": "vidro",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Segundo retângulo cruzado do canto sudoeste, lido como box de vidro fumê visto em foto_banheiro_01. Ver a ressalva em bhsocial-armario: a troca com o armário é possível. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
         }
       ],
       "checks": [
@@ -1301,6 +1506,40 @@
           "evidence": "Interrupção da divisória oeste entre v=321 e v=346, 26 px = 0,69 m. Mesmo vão de porta-servico-bh."
         }
       ],
+      "fixtures": [
+        {
+          "id": "bhservico-vaso",
+          "kind": "vaso",
+          "footprint": {
+            "u": 138,
+            "v": 300,
+            "width": 18,
+            "depth": 20
+          },
+          "base": 0,
+          "height": 0.75,
+          "material": "louca-salmao",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Vaso na face leste, desenhado de lado na planta. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Nenhuma foto mostra este banheiro. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "bhservico-cuba",
+          "kind": "cuba",
+          "footprint": {
+            "u": 141,
+            "v": 322,
+            "width": 15,
+            "depth": 24
+          },
+          "base": 0,
+          "height": 0.85,
+          "material": "bancada-granito",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Cuba sobre bancada estreita na face leste, abaixo do vaso. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        }
+      ],
       "checks": []
     },
     {
@@ -1370,6 +1609,40 @@
           "heightParameter": "doorHeight",
           "status": "proposto",
           "evidence": "Interrupção da divisória leste entre v=336 e v=360, 25 px = 0,66 m, dando no corredor."
+        }
+      ],
+      "fixtures": [
+        {
+          "id": "lavabo-cuba",
+          "kind": "cuba",
+          "footprint": {
+            "u": 165,
+            "v": 320,
+            "width": 16,
+            "depth": 26
+          },
+          "base": 0,
+          "height": 0.85,
+          "material": "bancada-granito",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Cuba na face oeste do lavabo. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. foto_lavabo_01 foi marcada dentro do lavabo olhando para oeste, o que é compatível com a cuba nessa face. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
+        },
+        {
+          "id": "lavabo-vaso",
+          "kind": "vaso",
+          "footprint": {
+            "u": 204,
+            "v": 313,
+            "width": 18,
+            "depth": 25
+          },
+          "base": 0,
+          "height": 0.75,
+          "material": "louca-salmao",
+          "loose": false,
+          "status": "proposto",
+          "evidence": "Vaso na face leste do lavabo, junto à parede que dá no corredor. Posição lida no desenho da planta original, com grade de coordenadas sobre a imagem ampliada. Mesma fonte e mesmo método do traçado das paredes. Altura não está na planta nem foi medida: valor usual do peça, declarado como estimativa."
         }
       ],
       "checks": []
@@ -1443,6 +1716,7 @@
           "evidence": "Interrupção da divisória norte entre u=194 e u=219, 26 px = 0,69 m. É a única abertura detectada no hall: o acesso ao LIVING se dá pelo corredor, não diretamente."
         }
       ],
+      "fixtures": [],
       "checks": []
     },
     {
@@ -1514,6 +1788,7 @@
           "evidence": "Mesmo vão de door-terrace do LIVING, visto do lado do terraço: interrupção entre u=305 e u=359."
         }
       ],
+      "fixtures": [],
       "checks": [
         {
           "id": "terraco-cota-340",
@@ -1635,6 +1910,7 @@
           "evidence": "Mesmo vão de porta-bh-social, visto do corredor: interrupção entre v=232 e v=257."
         }
       ],
+      "fixtures": [],
       "checks": []
     },
     {
@@ -1784,6 +2060,7 @@
           "evidence": "Mesmo vão de porta-lavabo, visto do corredor: interrupção entre v=336 e v=360."
         }
       ],
+      "fixtures": [],
       "checks": []
     }
   ],
@@ -1837,6 +2114,31 @@
       "color": "#cfe0e6",
       "status": "proposto",
       "evidence": "Vidro incolor, representado por um plano translúcido de cor fria. Não é amostra: é convenção de desenho, porque a cor lida numa foto de vidro é a cor do que está atrás dele."
+    },
+    "louca-salmao": {
+      "color": "#d59363",
+      "status": "proposto",
+      "evidence": "Louça sanitária salmão, cor de época, em foto_banheiro_01: vaso, bidê e cuba. Amostra px(900,870)-(1000,1000): #d39265, quase sem correção porque o assento branco da mesma foto já lê #edecec. Adotada também nos outros banheiros e no lavabo, que nenhuma foto mostra de perto. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+    },
+    "bancada-granito": {
+      "color": "#7a6653",
+      "status": "proposto",
+      "evidence": "Bancada de granito escuro em foto_cozinha_01, px(60,720)-(300,780): #716355 bruto, #7a6653 corrigido. Adotada também nas bancadas dos banheiros, que a planta desenha mas nenhuma foto mostra. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+    },
+    "armario-mostarda": {
+      "color": "#b27b48",
+      "status": "proposto",
+      "evidence": "Frentes de armário mostarda da cozinha e da área de serviço, em foto_cozinha_01 e foto_corredor_cozinha_01. Amostra px(120,900)-(300,1120): #a5774a bruto, #b27b48 corrigido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+    },
+    "armario-amarelo": {
+      "color": "#e3a236",
+      "status": "proposto",
+      "evidence": "Armário alto amarelo do BH social, em foto_banheiro_01, px(130,420)-(245,700): #e0a137, praticamente sem correção. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+    },
+    "eletrodomestico-branco": {
+      "color": "#e6e4e1",
+      "status": "proposto",
+      "evidence": "Geladeira branca em foto_cozinha_01. Branco de eletrodoméstico tratado como o branco de tinta: normalizado, e não usado cru, porque a leitura de uma superfície branca grande é dominada pela exposição da foto."
     }
   }
 }

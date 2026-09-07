@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, fixtureBlock, headingFromYaw, innerPoint, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks } from '../src/scene/preview';
+import { barriersFrom, doorwayLabels, fixtureBlock, FOV_MAX, FOV_MIN, FOV_PASSEIO, headingFromYaw, horizontalFovDeg, innerPoint, labelFacing, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks, wallLabels, zoomFov } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
 import { POSE_LIMITS } from '../src/data/validation';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
@@ -359,3 +359,98 @@ describe('rótulos no piso', () => {
     expect(startingPoint(salas)).toEqual(innerPoint(maior.contour));
   });
 });
+
+describe('letreiros de parede e de porta', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+  const salas = deriveApartment(initialApartment(), transform);
+
+  it('escreve o nome do cômodo virado para dentro dele', () => {
+    for (const sala of salas) {
+      for (const label of wallLabels(sala)) {
+        expect(label.text).toBe(sala.name);
+        const olhar = labelFacing(label.rotationY);
+        // Meio metro à frente do letreiro tem de cair dentro do próprio cômodo.
+        const alvo = { x: label.x + olhar.x * .5, z: label.z + olhar.z * .5 };
+        expect(dentroDoContorno(sala.contour, alvo), `${sala.id}/${label.text}`).toBe(true);
+      }
+    }
+  });
+
+  it('mantém o letreiro abaixo do teto e acima da cintura', () => {
+    for (const sala of salas) {
+      const altura = Math.max(...sala.walls.map(w => w.height));
+      for (const label of wallLabels(sala)) {
+        expect(label.y, sala.id).toBeLessThan(altura);
+        expect(label.y, sala.id).toBeGreaterThan(.5);
+      }
+    }
+  });
+
+  it('nunca põe o letreiro de parede sobre um vão', () => {
+    for (const sala of salas) {
+      for (const label of wallLabels(sala)) {
+        for (const wall of sala.walls) {
+          const comprimento = Math.hypot(wall.end.x - wall.start.x, wall.end.z - wall.start.z);
+          const dx = (wall.end.x - wall.start.x) / comprimento, dz = (wall.end.z - wall.start.z) / comprimento;
+          const t = (label.x - wall.start.x) * dx + (label.z - wall.start.z) * dz;
+          const naParede = Math.abs((label.x - wall.start.x) * dz - (label.z - wall.start.z) * dx) < .1 && t > 0 && t < comprimento;
+          if (!naParede) continue;
+          for (const vao of wall.openings) {
+            expect(t > vao.offset && t < vao.offset + vao.width, `${sala.id} ${label.text} sobre ${vao.type}`).toBe(false);
+          }
+        }
+      }
+    }
+  });
+
+  it('nomeia sobre cada porta o cômodo do outro lado, nunca o próprio', () => {
+    const rotulos = doorwayLabels(salas);
+    expect(rotulos.length).toBeGreaterThan(10);
+    const nomes = new Set(salas.map(s => s.name));
+    for (const label of rotulos) {
+      const nome = label.text.replace('→ ', '');
+      expect(nomes.has(nome), label.text).toBe(true);
+      const olhar = labelFacing(label.rotationY);
+      // O letreiro é lido de dentro do cômodo de origem, que não é o cômodo nomeado.
+      const daqui = salas.find(s => dentroDoContorno(s.contour, { x: label.x + olhar.x * .4, z: label.z + olhar.z * .4 }));
+      expect(daqui, label.text).toBeDefined();
+      expect(daqui!.name).not.toBe(nome);
+    }
+  });
+
+  it('só rotula portas, e sempre com folga sob o teto', () => {
+    for (const label of doorwayLabels(salas)) {
+      expect(label.y).toBeGreaterThan(1.8);
+      expect(label.y).toBeLessThan(2.7);
+    }
+  });
+});
+
+describe('zoom do passeio', () => {
+  it('aproxima e afasta dentro de limites', () => {
+    expect(zoomFov(FOV_PASSEIO, -1)).toBeLessThan(FOV_PASSEIO);
+    expect(zoomFov(FOV_PASSEIO, 1)).toBeGreaterThan(FOV_PASSEIO);
+    let fov = FOV_PASSEIO;
+    for (let i = 0; i < 60; i++) fov = zoomFov(fov, -1);
+    expect(fov).toBe(FOV_MIN);
+    for (let i = 0; i < 60; i++) fov = zoomFov(fov, 1);
+    expect(fov).toBe(FOV_MAX);
+  });
+
+  it('deriva o campo horizontal que a planta desenha', () => {
+    expect(horizontalFovDeg(FOV_PASSEIO, 16 / 9)).toBeGreaterThan(FOV_PASSEIO);
+    expect(horizontalFovDeg(FOV_PASSEIO, 1)).toBeCloseTo(FOV_PASSEIO, 9);
+    // Aproximar estreita o leque desenhado na planta.
+    expect(horizontalFovDeg(FOV_MIN, 16 / 9)).toBeLessThan(horizontalFovDeg(FOV_MAX, 16 / 9));
+  });
+});
+
+// Ponto dentro de contorno em metros, para os testes acima.
+function dentroDoContorno(contour: { x: number; z: number }[], p: { x: number; z: number }) {
+  let dentro = false;
+  for (let i = 0; i < contour.length; i++) {
+    const a = contour[i], b = contour[(i + 1) % contour.length];
+    if ((a.z > p.z) !== (b.z > p.z) && p.x < a.x + (p.z - a.z) * (b.x - a.x) / (b.z - a.z)) dentro = !dentro;
+  }
+  return dentro;
+}

@@ -1,5 +1,23 @@
 # Progresso
 
+## 07/09/2026 — Orientação, tela cheia e zoom no passeio
+
+Cinco pedidos do usuário depois de usar a visita publicada, todos sobre o passeio.
+
+**Letreiros nas superfícies.** O rótulo no piso funciona de cima e não funciona andando: a 1,60 m, olhando para a frente, o chão sob os pés está fora do campo de visão. Agora o nome do cômodo aparece no alto da face interna das duas paredes mais longas, e sobre cada porta aparece o nome do cômodo do outro lado (D020). Ambos só aparecem dentro do passeio.
+
+A vizinhança de cada porta é apurada por geometria, não declarada: do meio do vão, um passo para fora da parede cai no cômodo vizinho. Saíram 30 letreiros de porta, e a distribuição confere com a planta — os corredores são os mais nomeados, porque são o que se vê pela maioria das portas. Nada foi acrescentado ao contrato dos dados.
+
+Três testes cuidam do que poderia dar errado em silêncio: o letreiro de parede nunca cai sobre um vão, sempre olha para dentro do próprio cômodo, e o letreiro de porta nunca nomeia o cômodo de onde é lido.
+
+**Leque dinâmico na planta.** O aviso de passeio passou a carregar o campo de visão horizontal, derivado do vertical e da proporção da tela. A planta desenha o setor de visão acompanhando quem caminha, e ele estreita ou alarga junto com o zoom.
+
+**Tela cheia** pela API do navegador, no contêiner da cena, disponível também fora do passeio.
+
+**Zoom pela roda do mouse**, mudando o campo de visão entre 24 e 78 graus, com o valor voltando ao padrão ao sair do passeio. Não é aproximação por deslocamento: é lente, o que mantém a colisão e a posição intactas.
+
+133 testes passam; TypeScript e build limpos. Nada foi aberto em navegador por quem construiu.
+
 ## 07/09/2026 — Nome e área escritos no piso, e o que a área revelou
 
 Pedido do usuário: um checkbox que escreva no chão da cena o nome do cômodo e a metragem. Feito nas duas telas, com o rótulo como textura de canvas deitada um centímetro acima do piso — sem fonte externa, sem geometria de texto, sem dependência nova (D019). O ponto e a largura do rótulo saem de `labelPlacement`, que reaproveita o mesmo sampler de ponto folgado que escolhe a partida do passeio: o texto pousa longe das paredes e nunca fica mais largo que o cômodo.

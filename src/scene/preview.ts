@@ -25,6 +25,8 @@ export type PreviewHandle = {
   setPalette(mode: PaletteMode): void;
   setFurniture(visible: boolean): void;
   setLabels(visible: boolean): void;
+  toggleFullscreen(): void;
+  isFullscreen(): boolean;
   setWalkListener(listener: (state: WalkState | null) => void): void;
   dispose(): void;
 };
@@ -40,7 +42,22 @@ const RAIO_CORPO = .28;
 const VELOCIDADE = 2.6;
 
 // Onde quem caminha está e para onde olha, na mesma convenção de azimute da planta.
-export type WalkState = { x: number; z: number; headingDeg: number };
+export type WalkState = { x: number; z: number; headingDeg: number; hFovDeg: number };
+
+export const FOV_PASSEIO = 42;
+export const FOV_MIN = 24;
+export const FOV_MAX = 78;
+
+// Roda do mouse no passeio: aproxima e afasta mudando o campo de visão, não a posição.
+export function zoomFov(atual: number, deltaY: number): number {
+  return Math.max(FOV_MIN, Math.min(FOV_MAX, atual + Math.sign(deltaY) * 3));
+}
+
+// Campo horizontal a partir do vertical e da proporção da tela. Mesma fórmula do contrato
+// das fotografias; repetida aqui para a cena não depender do módulo de dados.
+export function horizontalFovDeg(verticalFovDeg: number, aspect: number): number {
+  return 2 * Math.atan(Math.tan(verticalFovDeg * Math.PI / 180 / 2) * aspect) * 180 / Math.PI;
+}
 
 // Inversa de poseRotation: o yaw da câmera do Three.js de volta para azimute de planta.
 export function headingFromYaw(yaw: number): number {
@@ -279,6 +296,87 @@ export function labelPlacement(room: SceneRoom) {
   return { center: centro, width: Math.max(.5, width), area: roomArea(room.contour) };
 }
 
+export type SurfaceLabel = { text: string; x: number; y: number; z: number; rotationY: number; width: number; kind: 'parede' | 'porta' };
+
+// Direção para onde a superfície olha, a partir da rotação em Y.
+export function labelFacing(rotationY: number) {
+  return { x: Math.sin(rotationY), z: Math.cos(rotationY) };
+}
+
+// Faixa cheia mais larga da parede: o rótulo não pode cair em cima de um vão.
+function trechoMaisLargo(wall: SceneWall) {
+  let melhor: Trecho | null = null;
+  for (const trecho of wall.pieces) {
+    if (trecho.base > 0.01) continue;
+    if (trecho.height < wall.height - 0.01) continue;
+    if (!melhor || trecho.end - trecho.start > melhor.end - melhor.start) melhor = trecho;
+  }
+  return melhor;
+}
+
+// Nome do cômodo escrito no alto da face interna das paredes mais longas. No passeio,
+// é o que diz onde se está sem precisar olhar para o chão.
+export function wallLabels(room: SceneRoom, quantas = 2): SurfaceLabel[] {
+  const candidatas = room.walls
+    .map(wall => ({ wall, trecho: trechoMaisLargo(wall) }))
+    .filter((c): c is { wall: SceneWall; trecho: Trecho } => c.trecho !== null && c.trecho.end - c.trecho.start >= 1.1)
+    .sort((a, b) => (b.trecho.end - b.trecho.start) - (a.trecho.end - a.trecho.start))
+    .slice(0, quantas);
+  return candidatas.map(({ wall, trecho }) => {
+    const comprimento = Math.hypot(wall.end.x - wall.start.x, wall.end.z - wall.start.z);
+    const dx = (wall.end.x - wall.start.x) / comprimento;
+    const dz = (wall.end.z - wall.start.z) / comprimento;
+    // A parede cresce para fora; o lado de dentro é o oposto da normal externa.
+    const dentroX = -dz, dentroZ = dx;
+    const meio = (trecho.start + trecho.end) / 2;
+    const rotationY = Math.atan2(dentroX, dentroZ);
+    return {
+      text: room.name,
+      x: wall.start.x + dx * meio + dentroX * .03,
+      y: Math.max(.6, wall.height - .34),
+      z: wall.start.z + dz * meio + dentroZ * .03,
+      rotationY,
+      width: Math.min((trecho.end - trecho.start) * .78, 2.3),
+      kind: 'parede' as const,
+    };
+  });
+}
+
+// Sobre cada porta, o nome do cômodo do outro lado. A vizinhança é geométrica: um passo
+// para fora da parede, a partir do meio do vão, cai dentro do cômodo vizinho.
+export function doorwayLabels(rooms: SceneRoom[]): SurfaceLabel[] {
+  const rotulos: SurfaceLabel[] = [];
+  for (const room of rooms) {
+    for (const wall of room.walls) {
+      const comprimento = Math.hypot(wall.end.x - wall.start.x, wall.end.z - wall.start.z);
+      if (!(comprimento > 0)) continue;
+      const dx = (wall.end.x - wall.start.x) / comprimento;
+      const dz = (wall.end.z - wall.start.z) / comprimento;
+      const foraX = dz, foraZ = -dx;
+      for (const vao of wall.openings) {
+        if (vao.type !== 'door') continue;
+        const topo = vao.base + vao.height;
+        if (topo + .3 > wall.height) continue;
+        const meio = vao.offset + vao.width / 2;
+        const px = wall.start.x + dx * meio, pz = wall.start.z + dz * meio;
+        const alem = { x: px + foraX * (wall.thickness + .25), z: pz + foraZ * (wall.thickness + .25) };
+        const vizinho = rooms.find(r => r !== room && dentro(r.contour, alem.x, alem.z));
+        if (!vizinho) continue;
+        rotulos.push({
+          text: `→ ${vizinho.name}`,
+          x: px - foraX * .03,
+          y: Math.min(topo + .22, wall.height - .12),
+          z: pz - foraZ * .03,
+          rotationY: Math.atan2(-foraX, -foraZ),
+          width: Math.min(vao.width * .95, 1.5),
+          kind: 'porta' as const,
+        });
+      }
+    }
+  }
+  return rotulos;
+}
+
 export function startingPoint(rooms: SceneRoom[]): Ponto | null {
   let melhorSala: SceneRoom | null = null, maiorArea = 0;
   for (const room of rooms) {
@@ -299,7 +397,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   try { renderer = new WebGLRenderer({ antialias: true, alpha: false }); }
   catch {
     report('WebGL indisponível. A planta, a calibração e as fotos continuam disponíveis.');
-    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setLabels() {}, setWalkListener() {}, dispose() {} };
+    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setLabels() {}, toggleFullscreen() {}, isFullscreen() { return false; }, setWalkListener() {}, dispose() {} };
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   host.prepend(renderer.domElement);
@@ -319,8 +417,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const pisos = new Group();
   const moveis = new Group();
   const rotulos = new Group();
+  const letreiros = new Group();
   const paredes = new Group();
-  scene.add(pisos, paredes, moveis, rotulos);
+  scene.add(pisos, paredes, moveis, rotulos, letreiros);
 
   const camera = new PerspectiveCamera(42, 1, 0.1, 400);
   camera.position.set(11, 12, 13);
@@ -363,9 +462,13 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
 
   // Só avisa quando de fato mudou: a planta não precisa ser redesenhada 60 vezes por segundo.
   function avisarPosicao() {
-    const estado = { x: camera.position.x, z: camera.position.z, headingDeg: headingFromYaw(yaw) };
+    const estado: WalkState = {
+      x: camera.position.x, z: camera.position.z, headingDeg: headingFromYaw(yaw),
+      hFovDeg: horizontalFovDeg(camera.fov, camera.aspect),
+    };
     if (ultimo && Math.abs(ultimo.x - estado.x) < 0.01 && Math.abs(ultimo.z - estado.z) < 0.01
-      && Math.abs(ultimo.headingDeg - estado.headingDeg) < 0.5) return;
+      && Math.abs(ultimo.headingDeg - estado.headingDeg) < 0.5
+      && Math.abs(ultimo.hFovDeg - estado.hFovDeg) < 0.5) return;
     ultimo = estado;
     avisarPasseio(estado);
   }
@@ -383,29 +486,58 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     grupo.clear();
   }
 
+  // Uma linha de texto virando textura. Serve ao piso e às paredes.
+  function textoEmPlano(linhas: string[], largura: number, corPrincipal: string, fundo?: string) {
+    const escala = 256;
+    const canvas = document.createElement('canvas');
+    canvas.width = escala; canvas.height = Math.round(escala / (linhas.length > 1 ? 2.6 : 4.2));
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return null;
+    if (fundo) {
+      ctx.fillStyle = fundo;
+      ctx.beginPath();
+      ctx.roundRect(0, 0, canvas.width, canvas.height, canvas.height * .22);
+      ctx.fill();
+    }
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = corPrincipal;
+    const tamanho = Math.round(canvas.height * (linhas.length > 1 ? .34 : .52));
+    ctx.font = `600 ${tamanho}px "Segoe UI", system-ui, sans-serif`;
+    linhas.forEach((linha, i) => {
+      const y = linhas.length === 1 ? canvas.height / 2 : canvas.height * (i === 0 ? .34 : .72);
+      ctx.fillText(linha, canvas.width / 2, y, canvas.width * .92);
+    });
+    const altura = largura * (canvas.height / canvas.width);
+    return new Mesh(
+      new PlaneGeometry(largura, altura),
+      new MeshBasicMaterial({ map: new CanvasTexture(canvas), transparent: true, depthWrite: false }),
+    );
+  }
+
+  // Nome do cômodo no alto da parede e destino escrito sobre cada porta: é o que orienta
+  // quem caminha, já que o rótulo do piso fica fora do campo de visão a 1,60 m de altura.
+  function montarLetreiro(label: SurfaceLabel) {
+    const mesh = textoEmPlano(
+      [label.text],
+      label.width,
+      label.kind === 'porta' ? '#7a4a33' : '#41544a',
+      label.kind === 'porta' ? '#fdf7f0e6' : '#f7f8f2cc',
+    );
+    if (!mesh) return;
+    mesh.position.set(label.x, label.y, label.z);
+    mesh.rotation.y = label.rotationY;
+    letreiros.add(mesh);
+  }
+
   // O rótulo é uma textura de canvas deitada no piso. Não usa fonte externa nem geometria
   // de texto: é a forma mais barata de escrever no chão sem dependência nova.
   function montarRotulo(room: SceneRoom) {
     const lugar = labelPlacement(room);
     if (!lugar) return;
-    const escala = 256;
-    const canvas = document.createElement('canvas');
-    canvas.width = escala; canvas.height = Math.round(escala / 2.6);
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#2b3b33';
-    ctx.font = `600 ${Math.round(escala * .15)}px "Segoe UI", system-ui, sans-serif`;
-    ctx.fillText(room.name, canvas.width / 2, canvas.height * .36, canvas.width * .94);
-    ctx.fillStyle = '#5d6b60';
-    ctx.font = `400 ${Math.round(escala * .105)}px "Segoe UI", system-ui, sans-serif`;
     const area = lugar.area.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    ctx.fillText(`${area} m²`, canvas.width / 2, canvas.height * .72, canvas.width * .94);
-    const textura = new CanvasTexture(canvas);
-    const altura = lugar.width * (canvas.height / canvas.width);
-    const mesh = new Mesh(new PlaneGeometry(lugar.width, altura), new MeshBasicMaterial({ map: textura, transparent: true, depthWrite: false }));
+    const mesh = textoEmPlano([room.name, `${area} m²`], lugar.width, '#2b3b33');
+    if (!mesh) return;
     mesh.rotation.x = -Math.PI / 2;
     // Um centímetro acima do piso: evita o cintilar de duas superfícies no mesmo plano.
     mesh.position.set(lugar.center.x, .01, lugar.center.z);
@@ -448,6 +580,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     limpar(paredes);
     limpar(moveis);
     limpar(rotulos);
+    limpar(letreiros);
     grade.visible = !rooms || rooms.length === 0;
     barreiras = []; partida = null;
     if (!rooms || rooms.length === 0) { limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 }; frame(); return; }
@@ -455,6 +588,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     for (const room of rooms) {
       montarPiso(room);
       if (comRotulos) montarRotulo(room);
+      for (const label of wallLabels(room)) montarLetreiro(label);
       for (const wall of room.walls) montarParede(wall, room);
       if (comMobilia) for (const fixture of room.fixtures) {
         const bloco = fixtureBlock(fixture);
@@ -464,6 +598,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
       }
       for (const p of room.contour) { xs.push(p.x); zs.push(p.z); }
     }
+    for (const label of doorwayLabels(rooms)) montarLetreiro(label);
+    // Letreiros de parede e de porta só fazem sentido de dentro: na visão geral seriam ruído.
+    letreiros.visible = andando;
     limites = { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
     barreiras = barriersFrom(rooms, ALTURA_CORPO, comMobilia);
     partida = startingPoint(rooms);
@@ -498,7 +635,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     if (!pose) {
       if (!emPose) return;
       emPose = false;
-      camera.fov = 42;
+      camera.fov = FOV_PASSEIO;
       camera.updateProjectionMatrix();
       controls.enabled = true;
       frame();
@@ -520,6 +657,14 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     pitch = Math.max(-PITCH_LIMITE, Math.min(PITCH_LIMITE, pitch - dy * .0026));
   }
   const aoMover = (event: MouseEvent) => { if (andando) olhar(event.movementX, event.movementY); };
+  const aoRolar = (event: WheelEvent) => {
+    if (!andando) return;
+    event.preventDefault();
+    camera.fov = zoomFov(camera.fov, event.deltaY);
+    camera.updateProjectionMatrix();
+    avisarPosicao();
+    render();
+  };
   const aoTeclar = (event: KeyboardEvent) => {
     if (!andando) return;
     if (event.key === 'Escape') { exitWalk(); return; }
@@ -571,7 +716,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     camera.position.set(inicio.x, alturaOlhos, inicio.z);
     yaw = inicial.yaw; pitch = inicial.pitch;
     emPose = false;
-    camera.fov = 42;
+    camera.fov = FOV_PASSEIO;
     camera.updateProjectionMatrix();
     camera.rotation.set(pitch, yaw, 0, 'YXZ');
     teclas.clear();
@@ -579,6 +724,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     window.addEventListener('keyup', aoSoltar);
     document.addEventListener('mousemove', aoMover);
     document.addEventListener('pointerlockchange', aoTrocarTrava);
+    tela.addEventListener('wheel', aoRolar, { passive: false });
+    letreiros.visible = true;
     tela.focus();
     tela.requestPointerLock?.();
     instante = performance.now();
@@ -595,6 +742,10 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     window.removeEventListener('keyup', aoSoltar);
     document.removeEventListener('mousemove', aoMover);
     document.removeEventListener('pointerlockchange', aoTrocarTrava);
+    tela.removeEventListener('wheel', aoRolar);
+    letreiros.visible = false;
+    camera.fov = FOV_PASSEIO;
+    camera.updateProjectionMatrix();
     if (document.pointerLockElement === tela) document.exitPointerLock?.();
     controls.enabled = true;
     ultimo = null;
@@ -624,6 +775,11 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   return {
     show, setWallsVisible, lookFromTop, frame, enterWalk, exitWalk, viewFromPose,
     setWalkListener(listener) { avisarPasseio = listener; },
+    toggleFullscreen() {
+      if (document.fullscreenElement === host) document.exitFullscreen?.();
+      else host.requestFullscreen?.().catch(() => report('O navegador recusou a tela cheia.'));
+    },
+    isFullscreen() { return document.fullscreenElement === host; },
     setLabels(visible) {
       if (visible === comRotulos) return;
       comRotulos = visible;

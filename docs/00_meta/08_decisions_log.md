@@ -38,6 +38,18 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D020 - Orientação no passeio vem de letreiros nas superfícies, não do rótulo do piso (07/09/2026)
+
+O rótulo no piso resolveu a visão de cima e não resolveu o passeio: a 1,60 m de altura, olhando para a frente, o chão sob os pés fica fora do campo de visão.
+
+Decisao: dois letreiros novos, ambos só visíveis dentro do passeio. `wallLabels` escreve o nome do cômodo no alto da face interna das duas paredes mais longas, e `doorwayLabels` escreve sobre cada porta o nome do cômodo do outro lado.
+
+A vizinhança de cada porta é apurada por geometria, não por declaração: do meio do vão, um passo para fora da parede cai dentro do cômodo vizinho, e é ele que dá nome ao letreiro. Nada foi acrescentado ao contrato dos dados. Saíram 30 letreiros de porta, e a distribuição confere com a planta: os corredores são os mais nomeados, porque são o que se vê pela maioria das portas.
+
+O letreiro de parede é centrado no trecho cheio mais largo, nunca sobre um vão, e há teste que percorre todas as paredes para garantir isso. Outro teste verifica que ele olha para dentro do próprio cômodo, e um terceiro que o letreiro de porta nunca nomeia o cômodo de onde é lido.
+
+Na visão geral os letreiros somem: de cima seriam ruído sobre a planta baixa.
+
 ## D019 - O rótulo no piso mostra a área do traçado, não a impressa (07/09/2026)
 
 O usuário pediu o nome do cômodo e a metragem escritos no chão da cena, com um checkbox.

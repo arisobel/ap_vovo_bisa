@@ -1,6 +1,6 @@
 import './style.css';
 import { horizontalFov, initialProject, poseToWorld, roomOptions, type Reference } from './data/validation';
-import { fovWedge } from './plan/spatial';
+import { fovWedge, worldToPlan } from './plan/spatial';
 import type { PreviewHandle } from './scene/preview';
 
 // Tela de visita: só leitura. Nenhum controle grava parâmetro, e nada é lido do rascunho local —
@@ -34,7 +34,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </article>
       <article class="panel visual-panel">
         <div class="panel-heading"><div><span class="step">02</span><h2>O apartamento</h2></div><span id="visit-badge" class="badge">Modelo em 3D</span></div>
-        <div class="plan-tools" id="visit-tools"><span id="visit-info">Reconstruído a partir da planta e das fotografias.</span><div><button id="visit-walk" class="primary">Andar por dentro</button><button id="visit-frame">Ver tudo</button><button id="visit-photo" hidden>Ver a fotografia</button><button id="visit-furniture" aria-pressed="true">Com mobília</button><label class="toggle" title="Áreas medidas no traçado. A planta imprime valores menores para os dormitórios, porque não conta os armários embutidos."><input type="checkbox" id="visit-labels"> Nomes no chão</label></div></div>
+        <div class="plan-tools" id="visit-tools"><span id="visit-info">Reconstruído a partir da planta e das fotografias.</span><div><button id="visit-walk" class="primary">Andar por dentro</button><button id="visit-frame">Ver tudo</button><button id="visit-full">Tela cheia</button><button id="visit-photo" hidden>Ver a fotografia</button><button id="visit-furniture" aria-pressed="true">Com mobília</button><label class="toggle" title="Áreas medidas no traçado. A planta imprime valores menores para os dormitórios, porque não conta os armários embutidos."><input type="checkbox" id="visit-labels"> Nomes no chão</label></div></div>
         <div id="preview"></div>
         <div class="photo-stage" id="visit-stage" hidden><img id="visit-large" alt=""></div>
         <p class="visual-footer"><span class="dot"></span> Uma reconstrução aproximada, guiada por evidências.</p>
@@ -54,6 +54,7 @@ let selecionada: Reference | null = null;
 let scene: PreviewHandle | null = null;
 let andando = false;
 let mostrandoFoto = false;
+let caminhante: { u: number; v: number; headingDeg: number; hFovDeg: number } | null = null;
 
 function make(tag: string, attrs: Record<string, string>) {
   const element = document.createElementNS('http://www.w3.org/2000/svg', tag);
@@ -66,6 +67,12 @@ function make(tag: string, attrs: Record<string, string>) {
 // um anel que pulsa. As demais ficam discretas, para não competirem com ela.
 function drawMarkers() {
   document.getElementById('markers')!.replaceChildren();
+  // Durante o passeio, o leque acompanha para onde o visitante está olhando.
+  if (caminhante) {
+    const setor = fovWedge({ u: caminhante.u, v: caminhante.v }, caminhante.headingDeg, caminhante.hFovDeg, 120);
+    make('polygon', { points: setor.map(p => `${p.u},${p.v}`).join(' '), fill: '#2f6a58', 'fill-opacity': '.2', stroke: '#2f6a58', 'stroke-opacity': '.5', 'stroke-width': '2' });
+    make('circle', { cx: `${caminhante.u}`, cy: `${caminhante.v}`, r: '8', fill: '#2f6a58', stroke: 'white', 'stroke-width': '3' });
+  }
   for (const photo of marcadas) {
     const pose = photo.pose!;
     const ativa = selecionada?.id === photo.id;
@@ -161,13 +168,18 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
   scene = preview.mountPreview(el('preview'), message => { el('visit-info').textContent = message; });
   scene.setWalkListener(estado => {
     const ativo = estado !== null;
+    caminhante = estado && project.calibration
+      ? { ...worldToPlan(estado, project.calibration.transform), headingDeg: estado.headingDeg, hFovDeg: estado.hFovDeg }
+      : null;
+    drawMarkers();
+    el('visit-full').textContent = scene?.isFullscreen() ? 'Sair da tela cheia' : 'Tela cheia';
     if (ativo === andando) return;
     andando = ativo;
     el('visit-walk').textContent = rotuloPasseio(ativo);
     el('visit-walk').classList.toggle('primary', !ativo);
     for (const id of ['visit-frame', 'visit-photo', 'visit-furniture', 'visit-labels']) el<HTMLButtonElement>(id).disabled = ativo;
     el('visit-info').textContent = ativo
-      ? 'W A S D ou setas para andar, mouse para olhar, Shift para acelerar, Esc para sair.'
+      ? 'W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, Esc para sair. O leque na planta acompanha sua vista.'
       : selecionada
         ? `Você está no ponto de ${title(selecionada)}, olhando na mesma direção da fotografia.`
         : 'Reconstruído a partir da planta e das fotografias.';
@@ -180,6 +192,11 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
       ? poseToWorld(selecionada.pose, project.calibration.transform)
       : null;
     scene?.enterWalk(pose);
+  };
+  el('visit-full').onclick = () => {
+    scene?.toggleFullscreen();
+    // O estado real chega no evento do navegador; o rótulo é corrigido logo depois.
+    setTimeout(() => { el('visit-full').textContent = scene?.isFullscreen() ? 'Sair da tela cheia' : 'Tela cheia'; }, 120);
   };
   el<HTMLInputElement>('visit-labels').onchange = event => {
     scene?.setLabels((event.target as HTMLInputElement).checked);

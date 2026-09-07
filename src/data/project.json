@@ -24,16 +24,16 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": "bh-social",
+      "roomId": "corredor-norte",
       "pose": {
-        "u": 215.54,
-        "v": 241.24,
+        "u": 238.64,
+        "v": 234.15,
         "cameraHeight": 1.55,
-        "headingDeg": 270,
+        "headingDeg": 256,
         "pitchDeg": 0,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "Banheiro social não tem banheira"
+        "evidence": "Olhando do corredor norte, Banhaeiro social não tem banheira."
       },
       "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
@@ -48,17 +48,17 @@
       "source": "original",
       "roomId": "cozinha",
       "pose": {
-        "u": 85.42,
-        "v": 394.47,
+        "u": 90.45,
+        "v": 415.82,
         "cameraHeight": 1.55,
         "headingDeg": 357,
         "pitchDeg": 0,
         "verticalFovDeg": 55,
         "confidence": "baixa",
-        "evidence": "olhando Da cozinha para o corredor"
+        "evidence": "de Dentro da cozinha se enxerga o corredor"
       },
       "status": "confirmado",
-      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+      "observations": "Corredor, a janela a esquerda, enxergando a porta de saída."
     },
     {
       "id": "foto_cozinha_01",
@@ -70,14 +70,14 @@
       "source": "original",
       "roomId": "almoco",
       "pose": {
-        "u": 100.24,
-        "v": 617.68,
+        "u": 110.21,
+        "v": 610.66,
         "cameraHeight": 1.55,
         "headingDeg": 0,
-        "pitchDeg": 0,
+        "pitchDeg": -10,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "De dentro da sala de Almoço, olhando em direção a cozinha."
+        "evidence": "Olhando a porta em direção ao corredor, observando a geladeira e a janela a esquerda"
       },
       "status": "confirmado",
       "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
@@ -90,19 +90,19 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": "corredor-sul",
+      "roomId": "lavabo",
       "pose": {
-        "u": 253.42,
-        "v": 344.27,
+        "u": 213.94,
+        "v": 346.11,
         "cameraHeight": 1.55,
-        "headingDeg": 268,
+        "headingDeg": 274,
         "pitchDeg": 0,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "Do corredor olhando para o lavabo."
+        "evidence": "Olhando a porta do lavabo de frente"
       },
       "status": "confirmado",
-      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+      "observations": "Olhando a porta do lavabo de frente"
     },
     {
       "id": "foto_outro_banheiro_01",
@@ -112,19 +112,19 @@
       "height": 1448,
       "kind": "photo",
       "source": "original",
-      "roomId": "dormitorio-1",
+      "roomId": "bh-suite",
       "pose": {
-        "u": 228.71,
-        "v": 161.33,
+        "u": 207.35,
+        "v": 162.25,
         "cameraHeight": 1.55,
         "headingDeg": 270,
         "pitchDeg": 0,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "De dentro do Dormitório 1 olhando o Banheiro da Suíte"
+        "evidence": "Olhando o Banheiro da suite que tem banheira"
       },
       "status": "confirmado",
-      "observations": "do Dormitório 1 olhando o Banheiro da Suíte"
+      "observations": "De dentro do quarto Olhando o Banheiro da suite que tem banheira"
     },
     {
       "id": "foto_quarto_01",
@@ -136,17 +136,17 @@
       "source": "original",
       "roomId": "dormitorio-1",
       "pose": {
-        "u": 248.48,
-        "v": 154.86,
+        "u": 269.92,
+        "v": 198.48,
         "cameraHeight": 1.55,
-        "headingDeg": 61,
-        "pitchDeg": 0,
+        "headingDeg": 35,
+        "pitchDeg": -4,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "De dentro do dormmitório da suíte (dormitório1) olhando para a janela, de forma oblíqua."
+        "evidence": "O dormitório Suíte tem a janela à esquerda e armario embutido. Olhando a janela de forma lateral, oblíqua "
       },
       "status": "confirmado",
-      "observations": "De dentro do dormmitório da suíte (dormitório1) olhando para a janela."
+      "observations": "O dormitório Suíte tem a janela à esquerda e armario embutido."
     },
     {
       "id": "foto_quarto_02",
@@ -158,17 +158,17 @@
       "source": "original",
       "roomId": "corredor-norte",
       "pose": {
-        "u": 245.18,
-        "v": 306.39,
+        "u": 245.22,
+        "v": 301.11,
         "cameraHeight": 1.55,
-        "headingDeg": 90,
+        "headingDeg": 89,
         "pitchDeg": 0,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "olhando desde o corredor para dentro do quarto , Dormitório 1"
+        "evidence": "olhando do corredor, No Dormitório 2 temos a janela mais a esquerda e a porta centralizada"
       },
       "status": "confirmado",
-      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+      "observations": "olhando do corredor, Dormitório 2 "
     },
     {
       "id": "foto_quarto_03",
@@ -180,17 +180,17 @@
       "source": "original",
       "roomId": "corredor-sul",
       "pose": {
-        "u": 255.07,
-        "v": 370.44,
+        "u": 243.58,
+        "v": 376.85,
         "cameraHeight": 1.55,
         "headingDeg": 96,
         "pitchDeg": 0,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "Escritório, observado desde a porta do corredor sul."
+        "evidence": "Na porta, o Escritorio tem ecrivaninha, armário à direita."
       },
       "status": "confirmado",
-      "observations": "Identificação espacial e posição de captura pendentes de revisão humana."
+      "observations": "Escritorio, ecrivaninha, armário à direita."
     },
     {
       "id": "foto_sala_01",
@@ -202,14 +202,14 @@
       "source": "original",
       "roomId": "living",
       "pose": {
-        "u": 121.66,
-        "v": 669.96,
+        "u": 78.92,
+        "v": 666.09,
         "cameraHeight": 1.55,
-        "headingDeg": 109,
+        "headingDeg": 102,
         "pitchDeg": 0,
         "verticalFovDeg": 55,
-        "confidence": "media",
-        "evidence": "Está olhando exatamente para essa Direção"
+        "confidence": "alta",
+        "evidence": "Está olhando para a varanda da parte garnde do L da Sala"
       },
       "status": "confirmado",
       "observations": "Visão da Sala, olhando em direção a Varanda."
@@ -224,14 +224,14 @@
       "source": "original",
       "roomId": "living",
       "pose": {
-        "u": 258.36,
-        "v": 577.66,
+        "u": 235.34,
+        "v": 519.55,
         "cameraHeight": 1.55,
-        "headingDeg": 162,
-        "pitchDeg": 0,
+        "headingDeg": 152,
+        "pitchDeg": -11,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "olhando para a varanda da parte curta do L"
+        "evidence": "EStá olhando para a varanda da parte curta do L da Sala."
       },
       "status": "confirmado",
       "observations": "parquet em espinha, esquadria clara na fachada sul"
@@ -246,17 +246,17 @@
       "source": "original",
       "roomId": "living",
       "pose": {
-        "u": 334.12,
-        "v": 608.77,
+        "u": 386.82,
+        "v": 600.78,
         "cameraHeight": 1.55,
-        "headingDeg": 240,
-        "pitchDeg": 0,
+        "headingDeg": 244,
+        "pitchDeg": -8,
         "verticalFovDeg": 55,
         "confidence": "alta",
-        "evidence": "Olhando para a janela do fundo da sala da bifurcação do L"
+        "evidence": "EStá ilhando para a janela do fundo, a partir da bifurcação do L da sala."
       },
       "status": "confirmado",
-      "observations": "Olhando para a janela do fundo da sala da bifurcação do L"
+      "observations": "Visão da Sala, olhando em direção a janela oposta."
     }
   ],
   "calibration": {

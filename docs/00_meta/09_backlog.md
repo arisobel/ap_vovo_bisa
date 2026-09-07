@@ -54,3 +54,11 @@ Exemplos do three.js indicados como visão futura. Ordenados por proporção ent
 - Iluminação por sondas (`webgl_lightprobes`, `_complex`, `_sponza`). O exemplo `complex` é exatamente o caso deste projeto: volumes de sonda independentes por cômodo, com luz indireta e sangramento de cor entre superfícies. Depende de geometria fechada, que o traçado já produz, e de um passo de pré-cálculo — é o degrau mais caro e o de maior efeito.
 - Luminárias reais (`webgl_lights_spotlight`, `webgl_lights_physical`). Exige saber onde estavam as luminárias e de que tipo eram; hoje não há evidência disso em nenhuma foto, e inventar posição de luz é inventar dado.
 - Mobília em malha real (`webgl_loader_gltf`) no lugar das caixas atuais. Depende de origem e licença dos modelos, e cada modelo pesa no bundle e na imagem publicada.
+
+## Experimento visual do LIVING — depois da revisão
+- Ajustar os números do cenário ilustrativo: intensidade do sol, da hemisférica e da ambiente residual, e a exposição padrão. São palpite não conferido; o controle de exposição no painel existe para o usuário achar o valor certo e informar.
+- Esquadria e vidro do living seguem em material antigo. Vidro pede transmissão; esquadria sozinha não muda a leitura.
+- Cortineiro de madeira escura no alto das paredes, com friso dourado, visível nas três fotos do living. Não modelado.
+- Coluna aparente no living: `foto_sala_01` e `foto_sala_03` mostram um pilar saliente que o traçado não registra.
+- Estender acabamentos aos demais cômodos exige resolver antes o acabamento de cada um com a mesma exigência de evidência. Cozinha e banheiros pedem a flor do azulejo, que é outro padrão gerado.
+- Sofá em GLB e iluminação indireta por sondas: adiados por decisão do usuário até a revisão desta rodada.

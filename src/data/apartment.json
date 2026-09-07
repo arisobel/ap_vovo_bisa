@@ -34,6 +34,21 @@
       "value": 1.2,
       "status": "estimado",
       "evidence": "Altura de janela provisória, sem medição física."
+    },
+    "baseboardHeight": {
+      "value": 0.1,
+      "status": "estimado",
+      "evidence": "Altura do rodapé branco visível nas três fotografias do LIVING, contínuo ao pé de todas as paredes e interrompido nas portas. 0,10 m é altura corrente e é ESTIMATIVA: não foi medida no imóvel nem deduzida da planta, que não desenha rodapé."
+    },
+    "tacoLength": {
+      "value": 0.21,
+      "status": "estimado",
+      "evidence": "Comprimento do taco do parquete em espinha. ESTIMADO a partir do taco brasileiro corrente da época, 7 x 21 cm, cuja proporção 3:1 é compatível com o que foto_sala_01 e foto_sala_03 mostram. Não foi medido, e nenhuma cota da planta o informa. Trocar aqui muda a escala do desenho no piso inteiro."
+    },
+    "tacoWidth": {
+      "value": 0.07,
+      "status": "estimado",
+      "evidence": "Largura do taco. ESTIMADA junto com tacoLength; ver a evidência daquele parâmetro. O padrão em espinha exige que o comprimento seja múltiplo próximo da largura para fechar um ladrilho de textura sem emenda."
     }
   },
   "rooms": [
@@ -2067,78 +2082,112 @@
   "materials": {
     "parede-branca": {
       "color": "#f0ede8",
+      "roughness": 0.95,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Branco de referência declarado, não medido: é o alvo usado para corrigir todas as outras amostras. As paredes do LIVING (foto_sala_03) e do dormitório (foto_quarto_01) são tinta branca lisa, lidas como #bbb6ae e #d0c9c2 sob a luz de cada foto."
+      "evidence": "Branco de referência declarado, não medido: é o alvo usado para corrigir todas as outras amostras. As paredes do LIVING (foto_sala_03) e do dormitório (foto_quarto_01) são tinta branca lisa, lidas como #bbb6ae e #d0c9c2 sob a luz de cada foto. Aparência óptica PROPOSTA, não medida: Tinta fosca: reflexo difuso, sem brilho especular perceptível nas fotos."
     },
     "teto-branco": {
       "color": "#f4f2ef",
+      "roughness": 0.97,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Teto branco liso em todas as fotos internas. Amostra em foto_sala_03, px(420,40)-(820,130): #aaa199 bruto, #dad2cc corrigido; adotado um pouco mais claro que a parede, como é usual. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+      "evidence": "Teto branco liso em todas as fotos internas. Amostra em foto_sala_03, px(420,40)-(820,130): #aaa199 bruto, #dad2cc corrigido; adotado um pouco mais claro que a parede, como é usual. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada. Aparência óptica PROPOSTA, não medida: Teto liso pintado, mais fosco ainda que a parede."
     },
     "azulejo-bege": {
       "color": "#d1bba0",
+      "roughness": 0.35,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Azulejo bege com estampa floral, do piso ao teto, em cozinha, área de serviço e banheiros. Amostra em foto_banheiro_01, px(480,700)-(820,860): #d1bba0, foto bem exposta (o assento branco lê #edecec, quase neutro, então quase não houve correção). Em foto_cozinha_01 a mesma família lê #e6d0b0 corrigido. A estampa não é reproduzida: só a cor de fundo. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+      "evidence": "Azulejo bege com estampa floral, do piso ao teto, em cozinha, área de serviço e banheiros. Amostra em foto_banheiro_01, px(480,700)-(820,860): #d1bba0, foto bem exposta (o assento branco lê #edecec, quase neutro, então quase não houve correção). Em foto_cozinha_01 a mesma família lê #e6d0b0 corrigido. A estampa não é reproduzida: só a cor de fundo. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada. Aparência óptica PROPOSTA, não medida: Azulejo esmaltado: brilho visível em foto_cozinha_01 e foto_banheiro_01."
     },
     "piso-parquete-escuro": {
       "color": "#854c29",
+      "roughness": 0.32,
+      "metalness": 0.0,
+      "pattern": {
+        "kind": "espinha",
+        "rotationDeg": 45
+      },
       "status": "proposto",
-      "evidence": "Parquete em espinha de peixe, escuro e avermelhado, no LIVING. Amostra em foto_sala_03, px(360,1080)-(760,1300): #683a1f bruto, #854c29 corrigido. O desenho em espinha não é reproduzido: só a cor. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+      "evidence": "Parquete em espinha de peixe, escuro e avermelhado, no LIVING. Amostra em foto_sala_03, px(360,1080)-(760,1300): #683a1f bruto, #854c29 corrigido. O desenho em espinha não é reproduzido: só a cor. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada. Aparência óptica PROPOSTA, não medida: Parquete envernizado: em foto_sala_03 o reflexo da janela no piso é a feição mais visível da imagem. O desenho em espinha é gerado por regra a partir de tacoLength e tacoWidth, com as tábuas a 45 graus das paredes como as fotos mostram; nenhum pixel de fotografia é usado como textura."
     },
     "piso-parquete-mel": {
       "color": "#d0824f",
+      "roughness": 0.38,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Parquete em espinha cor de mel, claramente mais claro que o do LIVING. Amostra em foto_quarto_01, px(260,1080)-(700,1300): #b46e42 bruto, #d0824f corrigido. foto_quarto_03 mostra o mesmo piso no ESCRITÓRIO. O desenho em espinha não é reproduzido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+      "evidence": "Parquete em espinha cor de mel, claramente mais claro que o do LIVING. Amostra em foto_quarto_01, px(260,1080)-(700,1300): #b46e42 bruto, #d0824f corrigido. foto_quarto_03 mostra o mesmo piso no ESCRITÓRIO. O desenho em espinha não é reproduzido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada. Aparência óptica PROPOSTA, não medida: Mesmo verniz dos demais parquetes, um pouco menos brilhante nas fotos dos dormitórios."
     },
     "piso-ceramico-terracota": {
       "color": "#c98252",
+      "roughness": 0.55,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Cerâmica terracota de junta larga na cozinha, no corredor de serviço e na área de serviço. Amostra em foto_cozinha_01, px(380,1180)-(720,1360): #ba7e54 bruto, #c98252 corrigido. foto_corredor_cozinha_01 mostra o mesmo piso seguindo até a área de serviço. As juntas não são reproduzidas. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+      "evidence": "Cerâmica terracota de junta larga na cozinha, no corredor de serviço e na área de serviço. Amostra em foto_cozinha_01, px(380,1180)-(720,1360): #ba7e54 bruto, #c98252 corrigido. foto_corredor_cozinha_01 mostra o mesmo piso seguindo até a área de serviço. As juntas não são reproduzidas. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada. Aparência óptica PROPOSTA, não medida: Cerâmica de junta larga, brilho médio."
     },
     "piso-ceramico-bege": {
       "color": "#d7bda6",
+      "roughness": 0.5,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Cerâmica bege clara nos banheiros. Amostra em foto_banheiro_01, px(480,1180)-(820,1340): #d7bda6, praticamente sem correção. As juntas não são reproduzidas. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+      "evidence": "Cerâmica bege clara nos banheiros. Amostra em foto_banheiro_01, px(480,1180)-(820,1340): #d7bda6, praticamente sem correção. As juntas não são reproduzidas. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada. Aparência óptica PROPOSTA, não medida: Cerâmica clara de banheiro, brilho médio."
     },
     "piso-externo": {
       "color": "#b9b3a8",
+      "roughness": 0.9,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Terraço: nenhuma das 11 fotografias o mostra. Cinza neutro escolhido para não afirmar um acabamento que ninguém viu. Trocar quando houver foto ou informação do usuário."
+      "evidence": "Terraço: nenhuma das 11 fotografias o mostra. Cinza neutro escolhido para não afirmar um acabamento que ninguém viu. Trocar quando houver foto ou informação do usuário. Aparência óptica PROPOSTA, não medida: Piso externo neutro; nenhuma foto o mostra, então o fosco é o palpite conservador."
     },
     "esquadria-aluminio": {
       "color": "#d8d9d8",
+      "roughness": 0.45,
+      "metalness": 0.7,
       "status": "proposto",
-      "evidence": "Esquadrias de alumínio cinza-claro, visíveis em foto_quarto_01, foto_quarto_03, foto_sala_03 e foto_banheiro_01. Amostra do montante em foto_quarto_01, px(762,392)-(792,660): #bbb8b5 bruto, #d8d9d8 corrigido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+      "evidence": "Esquadrias de alumínio cinza-claro, visíveis em foto_quarto_01, foto_quarto_03, foto_sala_03 e foto_banheiro_01. Amostra do montante em foto_quarto_01, px(762,392)-(792,660): #bbb8b5 bruto, #d8d9d8 corrigido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada. Aparência óptica PROPOSTA, não medida: Alumínio anodizado: metálico e pouco polido."
     },
     "vidro": {
       "color": "#cfe0e6",
+      "roughness": 0.1,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Vidro incolor, representado por um plano translúcido de cor fria. Não é amostra: é convenção de desenho, porque a cor lida numa foto de vidro é a cor do que está atrás dele."
+      "evidence": "Vidro incolor, representado por um plano translúcido de cor fria. Não é amostra: é convenção de desenho, porque a cor lida numa foto de vidro é a cor do que está atrás dele. Aparência óptica PROPOSTA, não medida: Convenção de desenho, não amostra. Continua sendo plano translúcido; não há transmissão física nesta rodada."
     },
     "louca-salmao": {
       "color": "#d59363",
+      "roughness": 0.25,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Louça sanitária salmão, cor de época, em foto_banheiro_01: vaso, bidê e cuba. Amostra px(900,870)-(1000,1000): #d39265, quase sem correção porque o assento branco da mesma foto já lê #edecec. Adotada também nos outros banheiros e no lavabo, que nenhuma foto mostra de perto. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+      "evidence": "Louça sanitária salmão, cor de época, em foto_banheiro_01: vaso, bidê e cuba. Amostra px(900,870)-(1000,1000): #d39265, quase sem correção porque o assento branco da mesma foto já lê #edecec. Adotada também nos outros banheiros e no lavabo, que nenhuma foto mostra de perto. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física. Aparência óptica PROPOSTA, não medida: Louça sanitária esmaltada, brilhante."
     },
     "bancada-granito": {
       "color": "#7a6653",
+      "roughness": 0.4,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Bancada de granito escuro em foto_cozinha_01, px(60,720)-(300,780): #716355 bruto, #7a6653 corrigido. Adotada também nas bancadas dos banheiros, que a planta desenha mas nenhuma foto mostra. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+      "evidence": "Bancada de granito escuro em foto_cozinha_01, px(60,720)-(300,780): #716355 bruto, #7a6653 corrigido. Adotada também nas bancadas dos banheiros, que a planta desenha mas nenhuma foto mostra. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física. Aparência óptica PROPOSTA, não medida: Granito polido de bancada."
     },
     "armario-mostarda": {
       "color": "#b27b48",
+      "roughness": 0.6,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Frentes de armário mostarda da cozinha e da área de serviço, em foto_cozinha_01 e foto_corredor_cozinha_01. Amostra px(120,900)-(300,1120): #a5774a bruto, #b27b48 corrigido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+      "evidence": "Frentes de armário mostarda da cozinha e da área de serviço, em foto_cozinha_01 e foto_corredor_cozinha_01. Amostra px(120,900)-(300,1120): #a5774a bruto, #b27b48 corrigido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física. Aparência óptica PROPOSTA, não medida: Frente de armário pintada, semifosca."
     },
     "armario-amarelo": {
       "color": "#e3a236",
+      "roughness": 0.6,
+      "metalness": 0.0,
       "status": "proposto",
-      "evidence": "Armário alto amarelo do BH social, em foto_banheiro_01, px(130,420)-(245,700): #e0a137, praticamente sem correção. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física."
+      "evidence": "Armário alto amarelo do BH social, em foto_banheiro_01, px(130,420)-(245,700): #e0a137, praticamente sem correção. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto. É cor proposta, não medição física. Aparência óptica PROPOSTA, não medida: Frente de armário pintada, semifosca."
     },
     "eletrodomestico-branco": {
       "color": "#e6e4e1",
+      "roughness": 0.4,
+      "metalness": 0.1,
       "status": "proposto",
-      "evidence": "Geladeira branca em foto_cozinha_01. Branco de eletrodoméstico tratado como o branco de tinta: normalizado, e não usado cru, porque a leitura de uma superfície branca grande é dominada pela exposição da foto."
+      "evidence": "Geladeira branca em foto_cozinha_01. Branco de eletrodoméstico tratado como o branco de tinta: normalizado, e não usado cru, porque a leitura de uma superfície branca grande é dominada pela exposição da foto. Aparência óptica PROPOSTA, não medida: Pintura de eletrodoméstico, lisa e um pouco brilhante."
     }
   }
 }

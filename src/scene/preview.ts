@@ -10,7 +10,25 @@ export type SceneFixture = {
   id: string; kind: string; loose: boolean; color: string;
   center: Ponto; size: { width: number; depth: number }; base: number; height: number;
 };
-export type SceneRoom = { id: string; name: string; verification: 'cota-impressa' | 'sem-cota'; finishes: ScenePalette; contour: Ponto[]; walls: SceneWall[]; fixtures: SceneFixture[] };
+// Cor mais as propriedades ópticas declaradas no material. A cena atual usa só a cor; quem monta
+// materiais PBR precisa do resto. Opcional para que dados anteriores continuem válidos.
+export type SceneOptic = { color: string; roughness: number; metalness: number; pattern?: { kind: 'espinha'; rotationDeg: number } };
+export type SceneOptics = { floor: SceneOptic; wall: SceneOptic; ceiling: SceneOptic };
+export type SceneRoom = { id: string; name: string; verification: 'cota-impressa' | 'sem-cota'; finishes: ScenePalette; optics?: SceneOptics; contour: Ponto[]; walls: SceneWall[]; fixtures: SceneFixture[] };
+
+// Acesso ao interior da cena, para um módulo que a estende sem fazer parte dela. Existe para que o
+// modo experimental viva em arquivo próprio e fora do pacote da visita: quem o instancia é o editor.
+export type SceneAccess = {
+  scene: Scene; renderer: WebGLRenderer;
+  pisos: Group; paredes: Group; moveis: Group;
+  ambiente: AmbientLight; sol: DirectionalLight;
+  render: () => void;
+};
+// `rebuilt` avisa que as malhas foram refeitas e as antigas não existem mais. `interior` avisa que
+// a câmera passou a olhar de dentro — no passeio ou na pose de uma fotografia —, que é quando um
+// teto faz sentido e a vista geral de cima não.
+export type SceneListener = { rebuilt(rooms: SceneRoom[] | null): void; interior(inside: boolean): void };
+export type SceneStats = { calls: number; triangles: number; frameMs: number | null };
 // 'materiais' pinta com os acabamentos lidos nas fotos; 'conferencia' volta às cores que
 // distinguem cômodo com cota impressa de cômodo sem cota. As duas leituras são úteis.
 export type PaletteMode = 'materiais' | 'conferencia';
@@ -30,6 +48,9 @@ export type PreviewHandle = {
   toggleFullscreen(): void;
   isFullscreen(): boolean;
   setWalkListener(listener: (state: WalkState | null) => void): void;
+  access(): SceneAccess | null;
+  setSceneListener(listener: SceneListener | null): void;
+  stats(): SceneStats;
   dispose(): void;
 };
 
@@ -451,7 +472,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   try { renderer = new WebGLRenderer({ antialias: true, alpha: false }); }
   catch {
     report('WebGL indisponível. A planta, a calibração e as fotos continuam disponíveis.');
-    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setLabels() {}, setDimensions() {}, setClickToWalk() {}, toggleFullscreen() {}, isFullscreen() { return false; }, setWalkListener() {}, dispose() {} };
+    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setLabels() {}, setDimensions() {}, setClickToWalk() {}, toggleFullscreen() {}, isFullscreen() { return false; }, setWalkListener() {}, access() { return null; }, setSceneListener() {}, stats() { return { calls: 0, triangles: 0, frameMs: null }; }, dispose() {} };
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   host.prepend(renderer.domElement);
@@ -461,7 +482,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
 
   const scene = new Scene();
   scene.background = new Color('#eeeee7');
-  scene.add(new AmbientLight('#ffffff', 1.9));
+  const ambiente = new AmbientLight('#ffffff', 1.9);
+  scene.add(ambiente);
   const sol = new DirectionalLight('#ffffff', 1.1);
   sol.position.set(-6, 14, 8);
   scene.add(sol);
@@ -515,6 +537,11 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const alvoTelaCheia = fullscreenTarget ?? host;
   let trocaDeTela = 0;
   let aoClicarNaCena: (() => void) | null = null;
+  let ouvinteDaCena: SceneListener | null = null;
+  // Média móvel do intervalo entre quadros do passeio. É a única medida de desempenho que vale:
+  // com a cena parada o renderizador não desenha nada e qualquer número seria fictício.
+  let mediaQuadro: number | null = null;
+  const avisarInterior = () => ouvinteDaCena?.interior(andando || emPose);
   // Telas de toque não têm ponteiro para prender nem teclado à mão: o passeio precisa de
   // controles próprios, e pedir a trava do ponteiro ali só produziria um erro silencioso.
   const ponteiroGrosso = () => typeof matchMedia === 'function' && matchMedia('(pointer: coarse)').matches;
@@ -651,7 +678,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     const altura = largura * (canvas.height / canvas.width);
     return new Mesh(
       new PlaneGeometry(largura, altura),
-      new MeshBasicMaterial({ map: new CanvasTexture(canvas), transparent: true, depthWrite: false }),
+      // `toneMapped: false` mantém nome de cômodo, área e destino com o mesmo contraste em qualquer
+      // configuração de exposição: o texto é instrumento de leitura, não superfície iluminada.
+      new MeshBasicMaterial({ map: new CanvasTexture(canvas), transparent: true, depthWrite: false, toneMapped: false }),
     );
   }
 
@@ -682,7 +711,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     const altura = cota.length * (canvas.height / canvas.width);
     const mesh = new Mesh(
       new PlaneGeometry(cota.length, altura),
-      new MeshBasicMaterial({ map: new CanvasTexture(canvas), transparent: true, depthWrite: false }),
+      new MeshBasicMaterial({ map: new CanvasTexture(canvas), transparent: true, depthWrite: false, toneMapped: false }),
     );
     mesh.rotation.order = 'YXZ';
     mesh.rotation.set(-Math.PI / 2, cota.rotationY, 0);
@@ -728,6 +757,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
       : room.verification === 'sem-cota' ? materiais.semCota : materiais.conferido;
     const piso = new Mesh(new ShapeGeometry(forma), cor);
     piso.rotation.x = -Math.PI / 2;
+    // Etiqueta de origem: é o que permite a outro módulo achar as malhas de um cômodo sem
+    // reconstruir a cena nem manter uma segunda lista para se desencontrar da primeira.
+    piso.userData = { roomId: room.id, kind: 'piso' };
     pisos.add(piso);
   }
 
@@ -737,12 +769,14 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
       const mesh = new Mesh(new BoxGeometry(bloco.size[0], bloco.size[1], bloco.size[2]), corParede);
       mesh.position.set(bloco.position[0], bloco.position[1], bloco.position[2]);
       mesh.rotation.y = bloco.rotationY;
+      mesh.userData = { roomId: room.id, kind: 'parede' };
       paredes.add(mesh);
     }
     for (const parte of openingParts(wall)) {
       const mesh = new Mesh(new BoxGeometry(parte.size[0], parte.size[1], parte.size[2]), parte.part === 'glass' ? materialVidro : materialEsquadria);
       mesh.position.set(parte.position[0], parte.position[1], parte.position[2]);
       mesh.rotation.y = parte.rotationY;
+      mesh.userData = { roomId: room.id, kind: parte.part === 'glass' ? 'vidro' : 'esquadria' };
       paredes.add(mesh);
     }
   }
@@ -771,6 +805,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
         const bloco = fixtureBlock(fixture);
         const mesh = new Mesh(new BoxGeometry(bloco.size[0], bloco.size[1], bloco.size[2]), material(fixture.color));
         mesh.position.set(bloco.position[0], bloco.position[1], bloco.position[2]);
+        mesh.userData = { roomId: room.id, kind: 'movel' };
         moveis.add(mesh);
       }
       for (const p of room.contour) { xs.push(p.x); zs.push(p.z); }
@@ -781,6 +816,10 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     limites = { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
     barreiras = barriersFrom(rooms, ALTURA_CORPO, comMobilia);
     partida = startingPoint(rooms);
+    // A cena foi remontada: quem a estende precisa refazer o que dependia das malhas antigas, e o
+    // mapa de sombra, se houver, está descrito sobre geometria que não existe mais.
+    ouvinteDaCena?.rebuilt(rooms);
+    renderer.shadowMap.needsUpdate = true;
     frame();
   }
 
@@ -815,6 +854,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
       camera.fov = FOV_PASSEIO;
       camera.updateProjectionMatrix();
       controls.enabled = true;
+      avisarInterior();
       frame();
       return;
     }
@@ -826,6 +866,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     camera.rotation.set(giro.x, giro.y, 0, 'YXZ');
     camera.fov = pose.verticalFovDeg;
     camera.updateProjectionMatrix();
+    avisarInterior();
     render();
   }
 
@@ -865,6 +906,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     if (!andando) return;
     quadro = requestAnimationFrame(passo);
     const dt = Math.min(.05, (agora - instante) / 1000 || 0);
+    const ms = agora - instante;
+    if (ms > 0 && ms < 500) mediaQuadro = mediaQuadro === null ? ms : mediaQuadro * .9 + ms * .1;
     instante = agora;
     let frente = 0, lado = 0;
     if (teclas.has('w') || teclas.has('arrowup') || avancoDoMouse) frente += 1;
@@ -926,6 +969,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     instante = performance.now();
     quadro = requestAnimationFrame(passo);
     ultimo = null;
+    mediaQuadro = null;
+    avisarInterior();
     avisarPosicao();
   }
 
@@ -958,6 +1003,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     avisarPasseio(null);
     const volta = poseDeOrigem;
     poseDeOrigem = null;
+    avisarInterior();
     if (volta) viewFromPose(volta);
     else frame();
   }
@@ -980,6 +1026,18 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   return {
     show, setWallsVisible, lookFromTop, frame, enterWalk, exitWalk, viewFromPose,
     setWalkListener(listener) { avisarPasseio = listener; },
+    access() { return { scene, renderer, pisos, paredes, moveis, ambiente, sol, render }; },
+    setSceneListener(listener) {
+      ouvinteDaCena = listener;
+      if (!listener) return;
+      // Quem chega depois da cena montada recebe o estado atual, em vez de esperar a próxima troca.
+      listener.rebuilt(ultimasSalas);
+      listener.interior(andando || emPose);
+    },
+    stats() {
+      const info = renderer.info.render;
+      return { calls: info.calls, triangles: info.triangles, frameMs: mediaQuadro };
+    },
     setClickToWalk(handler) {
       aoClicarNaCena = handler;
       tela.removeEventListener('pointerdown', marcarAperto);

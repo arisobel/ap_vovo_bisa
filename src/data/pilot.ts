@@ -3,7 +3,7 @@ import { pixelDistance, planToWorld, type Point, type Transform } from '../plan/
 
 export type ParameterStatus = 'estimado' | 'confirmado';
 export type Parameter = { value: number; status: ParameterStatus; evidence: string };
-export type ParameterName = 'wallHeight' | 'railingHeight' | 'wallThickness' | 'doorHeight' | 'windowBase' | 'windowHeight';
+export type ParameterName = 'wallHeight' | 'railingHeight' | 'wallThickness' | 'doorHeight' | 'windowBase' | 'windowHeight' | 'baseboardHeight' | 'tacoLength' | 'tacoWidth';
 // Alturas que uma parede pode assumir. A parede escolhe um parâmetro nomeado, nunca um número solto:
 // altura é estimativa com evidência, e mudar a estimativa tem de mudar todas as paredes de uma vez.
 export type WallHeightParameter = 'wallHeight' | 'railingHeight';
@@ -17,9 +17,20 @@ export type Check = { id: string; kind: 'length' | 'area'; printed: number; pixe
 export const checkTolerance: Record<Confidence, number> = { alta: 1.5, media: 3.5 };
 export type Verification = 'cota-impressa' | 'sem-cota';
 // Acabamento é cor nomeada com evidência, como a altura de parede: nenhum hexadecimal solto na cena.
-export type Material = { color: string; status: 'proposto' | 'confirmado'; evidence: string };
+// Rugosidade e metalicidade seguem a mesma regra: declaradas no material, nunca no código da cena.
+// São APARÊNCIA PROPOSTA, não medida — ninguém mediu o brilho de uma parede deste apartamento.
+export type MaterialPattern = { kind: 'espinha'; rotationDeg: number };
+export type Material = { color: string; roughness: number; metalness: number; pattern?: MaterialPattern; status: 'proposto' | 'confirmado'; evidence: string };
+// Adotados quando o material não declara: superfície fosca e não metálica, que é o caso da maioria
+// das superfícies de uma casa. Arquivos anteriores seguem válidos sem os campos novos.
+export const DEFAULT_ROUGHNESS = .85;
+export const DEFAULT_METALNESS = 0;
 export type Finishes = { floor: string; wall: string; ceiling: string; evidence: string };
 export type Palette = { floor: string; wall: string; ceiling: string };
+// A mesma resolução de acabamento, com as propriedades ópticas junto. `Palette` continua sendo só
+// cor, porque é o que a cena atual consome; quem precisa de PBR pede `optics`.
+export type Optic = { color: string; roughness: number; metalness: number; pattern?: MaterialPattern };
+export type Optics = { floor: Optic; wall: Optic; ceiling: Optic };
 // Peça de mobília. A pegada é retangular e alinhada aos eixos, em pixels da planta, como o
 // contorno dos cômodos: recalibrar move os móveis junto com as paredes.
 export type Footprint = { u: number; v: number; width: number; depth: number };
@@ -35,7 +46,15 @@ export const fixtureKinds: FixtureKind[] = ['banheira', 'vaso', 'bide', 'cuba', 
 export const defaultFinishes: Finishes = { floor: 'piso-externo', wall: 'parede-branca', ceiling: 'teto-branco', evidence: 'Acabamento não declarado no arquivo; neutro adotado.' };
 export type Room = { id: string; name: string; status: 'proposto'; verification: Verification; evidence: string; finishes: Finishes; fixtures: Fixture[]; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
 export type Apartment = { schemaVersion: 2; planId: string; planWidth: number; planHeight: number; convention: string; parameters: Parameters; materials: Record<string, Material>; rooms: Room[] };
-export const parameterNames: ParameterName[] = ['wallHeight', 'railingHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight'];
+export const parameterNames: ParameterName[] = ['wallHeight', 'railingHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight', 'baseboardHeight', 'tacoLength', 'tacoWidth'];
+// Faixa aceita por parâmetro. Não é margem de erro: é o que se admite antes de tratar o número
+// como engano de digitação. Escrita como tabela porque a lista cresceu além do que um encadeamento
+// de ternários deixa ler.
+const parameterBounds: Record<ParameterName, [number, number]> = {
+  wallHeight: [.2, 5], railingHeight: [.2, 5], wallThickness: [.05, .6],
+  doorHeight: [.2, 5], windowBase: [0, 3], windowHeight: [.2, 5],
+  baseboardHeight: [.02, .4], tacoLength: [.05, 1], tacoWidth: [.02, .5],
+};
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(`Estrutura: ${message}`); }
 const record = (v: unknown): Record<string, any> => { assert(v && typeof v === 'object' && !Array.isArray(v), 'objeto inválido.'); return v as Record<string, any>; };
 const finite = (v: unknown, min: number, max: number) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
@@ -47,10 +66,13 @@ function validateParameters(value: unknown): Parameters {
   const parameters = {} as Parameters;
   for (const name of parameterNames) {
     const v = record(raw[name]);
-    const bounds = name === 'wallThickness' ? [.05, .6] : name === 'windowBase' ? [0, 3] : [.2, 5];
+    const bounds = parameterBounds[name];
     assert(finite(v.value, bounds[0], bounds[1]) && (v.status === 'estimado' || v.status === 'confirmado') && evidence(v.evidence), `parâmetro inválido: ${name}.`);
     parameters[name] = { value: v.value, status: v.status, evidence: v.evidence };
   }
+  // Relações entre parâmetros, que nenhuma faixa isolada pega.
+  assert(parameters.tacoWidth.value < parameters.tacoLength.value, 'taco mais largo que comprido.');
+  assert(parameters.baseboardHeight.value < parameters.wallHeight.value, 'rodapé mais alto que o pé-direito.');
   return parameters;
 }
 
@@ -91,7 +113,22 @@ function validateMaterials(value: unknown): Record<string, Material> {
     assert(typeof m.color === 'string' && HEX.test(m.color), `cor inválida em ${nome}: use #rrggbb minúsculo.`);
     assert(m.status === 'proposto' || m.status === 'confirmado', `estado inválido em ${nome}.`);
     assert(evidence(m.evidence), `material ${nome} sem evidência escrita.`);
-    materiais[nome] = { color: m.color, status: m.status, evidence: m.evidence };
+    assert(m.roughness === undefined || finite(m.roughness, 0, 1), `rugosidade inválida em ${nome}: use 0 a 1.`);
+    assert(m.metalness === undefined || finite(m.metalness, 0, 1), `metalicidade inválida em ${nome}: use 0 a 1.`);
+    let pattern: MaterialPattern | undefined;
+    if (m.pattern !== undefined && m.pattern !== null) {
+      const p = record(m.pattern);
+      assert(p.kind === 'espinha', `padrão desconhecido em ${nome}.`);
+      assert(finite(p.rotationDeg, 0, 90), `rotação do padrão inválida em ${nome}: use 0 a 90 graus.`);
+      pattern = { kind: 'espinha', rotationDeg: p.rotationDeg };
+    }
+    materiais[nome] = {
+      color: m.color,
+      roughness: m.roughness === undefined ? DEFAULT_ROUGHNESS : m.roughness,
+      metalness: m.metalness === undefined ? DEFAULT_METALNESS : m.metalness,
+      ...(pattern ? { pattern } : {}),
+      status: m.status, evidence: m.evidence,
+    };
   }
   return materiais;
 }
@@ -267,6 +304,16 @@ export function palette(room: Room, materials: Record<string, Material>): Palett
   return { floor: cor(room.finishes.floor), wall: cor(room.finishes.wall), ceiling: cor(room.finishes.ceiling) };
 }
 
+// Resolve o acabamento do cômodo nas propriedades ópticas declaradas.
+export function optics(room: Room, materials: Record<string, Material>): Optics {
+  const parte = (nome: string): Optic => {
+    const m = materials[nome];
+    assert(m, `material não declarado: ${nome}.`);
+    return { color: m.color, roughness: m.roughness, metalness: m.metalness, ...(m.pattern ? { pattern: m.pattern } : {}) };
+  };
+  return { floor: parte(room.finishes.floor), wall: parte(room.finishes.wall), ceiling: parte(room.finishes.ceiling) };
+}
+
 export function deriveRoom(room: Room, parameters: Parameters, materials: Record<string, Material>, transform: Transform) {
   assert(Number.isFinite(transform.metersPerPixel) && transform.metersPerPixel > 0 && Number.isFinite(transform.origin.u) && Number.isFinite(transform.origin.v), 'transformação inválida.');
   const contour = room.contour.map(point => planToWorld(point, transform));
@@ -288,7 +335,7 @@ export function deriveRoom(room: Room, parameters: Parameters, materials: Record
     };
   });
   const checks = room.checks.map(c => ({ ...c, ...checkDeviation(c, transform) }));
-  return { id: room.id, name: room.name, verification: room.verification, finishes: palette(room, materials), contour, walls, fixtures, checks };
+  return { id: room.id, name: room.name, verification: room.verification, finishes: palette(room, materials), optics: optics(room, materials), contour, walls, fixtures, checks };
 }
 
 export function deriveApartment(apartment: Apartment, transform: Transform) {

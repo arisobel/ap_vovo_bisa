@@ -54,6 +54,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       <article class="panel visual-panel">
         <div class="panel-heading"><div><span class="step">02</span><h2>Visualização</h2></div><button id="show-3d" hidden>Voltar à visão 3D</button><span id="visual-badge" class="badge">Sem escala definida</span></div>
         <div class="plan-tools" id="scene-tools" hidden><span id="scene-info"></span><div><button id="scene-walk" class="primary">Andar por dentro</button><button id="scene-frame">Enquadrar</button><button id="scene-top">Vista superior</button><button id="scene-full">Tela cheia</button><button id="scene-walls" aria-pressed="true">Ocultar paredes</button><button id="scene-palette" aria-pressed="true">Cores: acabamento</button><button id="scene-furniture" aria-pressed="true">Com mobília</button><label class="toggle" title="Áreas medidas no traçado. A planta imprime valores menores para os dormitórios, porque não conta os armários embutidos."><input type="checkbox" id="scene-labels" checked> Nomes no chão</label><label class="toggle" title="Comprimento de cada parede do traçado, com setas nas extremidades. Não são as cotas impressas na planta."><input type="checkbox" id="scene-dims"> Medidas</label></div></div>
+        <details class="lab" id="scene-lab" hidden><summary>Experimento visual do LIVING <span class="lab-tag">local, desligado por padrão</span></summary><div class="lab-body"><div class="lab-modes" id="lab-modes" role="radiogroup" aria-label="Aparência do experimento"><label><input type="radio" name="lab-mode" value="atual" checked> Atual</label><label><input type="radio" name="lab-mode" value="acabamentos"> Acabamentos</label><label><input type="radio" name="lab-mode" value="iluminacao"> Iluminação</label></div><label class="lab-exp" id="lab-exp-row" hidden>Exposição <input type="range" id="lab-exp" min="0.4" max="2" step="0.05" value="1"><output id="lab-exp-val">1,00</output></label><p class="lab-note" id="lab-note"></p><p class="lab-stats" id="lab-stats"></p></div></details>
         <div id="preview"><div class="preview-note" id="preview-note"><span class="cube-icon">◇</span><p class="eyebrow">CADA MEMÓRIA TEM SEU ESPAÇO</p><h3>O apartamento começa<br>pela planta.</h3><p>Defina a escala ao lado para levantar<br>as paredes do traçado.<br>Sem escala não há metro, e sem metro<br>não há parede.</p><span class="subtle-pill">Grade ilustrativa · sem geometria do imóvel</span></div><p id="webgl-status" class="webgl-status" role="status"></p></div>
         <div id="photo-view" hidden><div class="photo-stage" id="photo-stage"><img id="large-photo" alt=""><p id="photo-error" class="error" hidden></p></div><div class="photo-description"><p class="eyebrow">FOTOGRAFIA ORIGINAL</p><h3 id="photo-title"></h3><p id="photo-meta"></p><p id="photo-state" class="muted"></p><label for="observations">Observações da referência</label><textarea id="observations" rows="2" maxlength="5000"></textarea><button id="save-notes">Salvar observações no rascunho</button><details id="pose-editor"><summary>Ambiente, ponto e direção</summary><label for="pose-room">Ambiente</label><select id="pose-room"></select><div class="measure-row"><button id="pose-mark" type="button">Marcar ponto e direção na planta</button><button id="pose-leave" hidden>Voltar a medir cotas</button><button id="pose-clear" type="button">Limpar pose</button></div><p id="pose-help" class="muted"></p><div class="point-inputs"><label>Altura da câmera (m)<input id="pose-height" type="number" step="0.05" min="0.3" max="2.5"></label><label>Azimute (°)<input id="pose-heading" type="number" step="1" min="0" max="359"></label><label>Inclinação (°)<input id="pose-pitch" type="number" step="1" min="-60" max="60"></label><label>Campo vertical (°)<input id="pose-fov" type="number" step="1" min="20" max="100"></label></div><label for="pose-confidence">Confiança da associação</label><select id="pose-confidence"></select><label for="pose-evidence">Evidência (por que esta foto é deste ponto)</label><textarea id="pose-evidence" rows="2" maxlength="5000"></textarea><div class="measure-row"><button id="pose-save" class="primary" type="button">Salvar como proposta</button><button id="pose-confirm" type="button">Confirmar</button><button id="pose-compare" type="button">Comparar com o modelo</button></div></details></div></div>
         <div class="visual-footer"><span class="dot"></span><span>Uma reconstrução aproximada, guiada por evidências.</span></div>
@@ -400,6 +401,9 @@ el<HTMLInputElement>('file').onchange = async event => {
 renderPhotos(); renderCalibration(); changeMode('reference');
 if (startupMessage) notify(startupMessage);
 
+// Ligado quando o experimento existe: avisa a troca de paleta, que não pode conviver com ele.
+let guardaDaPaleta: ((materiais: boolean) => void) | null = null;
+
 // A cena só existe depois da escala: sem metros por pixel não há como levantar parede alguma.
 function renderScene() {
   if (!scene) return;
@@ -407,6 +411,7 @@ function renderScene() {
   const rooms = transform && apartment && derive ? derive(apartment, transform) : null;
   scene.show(rooms);
   el('scene-tools').hidden = !rooms || !!selectedPhoto;
+  el('scene-lab').hidden = !rooms;
   el('preview-note').hidden = !!rooms;
   el('visual-badge').textContent = rooms ? `${rooms.length} cômodos · traçado proposto` : 'Sem escala definida';
   if (rooms) {
@@ -414,7 +419,7 @@ function renderScene() {
     el('scene-info').textContent = sceneInfo;
   }
 }
-Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview, pilot]) => {
+Promise.all([import('./scene/preview'), import('./data/pilot'), import('./scene/experiment')]).then(([preview, pilot, lab]) => {
   apartment = pilot.initialApartment();
   derive = pilot.deriveApartment;
   // A tela cheia leva o painel inteiro, não só a caixa da cena: dentro dela a barra de
@@ -480,6 +485,7 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     button.setAttribute('aria-pressed', String(materiais));
     button.textContent = materiais ? 'Cores: acabamento' : 'Cores: conferência';
     scene?.setPalette(materiais ? 'materiais' : 'conferencia');
+    guardaDaPaleta?.(materiais);
     sceneInfo = materiais
       ? 'Acabamentos propostos a partir das fotografias: piso, parede e esquadrias. Nenhuma cor foi medida no apartamento.'
       : 'Piso bege é cômodo conferido por cota impressa; piso azulado é cômodo sem cota para conferir.';
@@ -492,6 +498,76 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     button.textContent = visible ? 'Ocultar paredes' : 'Mostrar paredes';
     scene?.setWallsVisible(visible);
   };
+  // --- experimento visual, só no editor ---
+  // Vive fora de preview.ts e é instanciado aqui, não lá: assim ele não entra no pacote da visita,
+  // que carrega a mesma cena sem carregar isto.
+  const acesso = scene.access();
+  const parametros = apartment?.parameters;
+  if (acesso && parametros) {
+    const experimento = lab.createExperiment({
+      ...acesso,
+      taco: { length: parametros.tacoLength.value, width: parametros.tacoWidth.value },
+      alturaRodape: parametros.baseboardHeight.value,
+      report: message => { el('webgl-status').textContent = message; },
+    });
+    scene.setSceneListener({
+      rebuilt: rooms => experimento.rebuild(rooms),
+      interior: dentro => experimento.setInterior(dentro),
+    });
+
+    const notas: Record<string, string> = {
+      atual: 'Aparência de origem, sem nada aplicado. É a referência da comparação.',
+      acabamentos: 'Só o LIVING muda: piso com desenho em espinha, paredes e teto PBR, teto e rodapé acesos. Nenhuma configuração global é tocada, então os outros cômodos ficam idênticos. São quatro mudanças ao mesmo tempo, não uma variável isolada.',
+      iluminacao: 'Acabamentos mais um cenário ILUSTRATIVO de sol pelas aberturas da fachada sul, com sombras. Curva de tom, exposição e as duas luzes são GLOBAIS: os demais cômodos também mudam de aparência neste modo. Não há orientação solar nem horário confirmados, e não há luz indireta nem reflexo da janela no piso.',
+    };
+    const atualizarLab = () => {
+      const modo = experimento.mode();
+      el('lab-note').textContent = notas[modo];
+      el('lab-exp-row').hidden = modo !== 'iluminacao';
+      for (const entrada of document.querySelectorAll<HTMLInputElement>('input[name="lab-mode"]')) {
+        entrada.checked = entrada.value === modo;
+      }
+    };
+    for (const entrada of document.querySelectorAll<HTMLInputElement>('input[name="lab-mode"]')) {
+      entrada.onchange = () => {
+        if (!entrada.checked) return;
+        // Trocar de opção não remonta a cena e não reposiciona a câmera: o enquadramento é o que
+        // torna as três versões comparáveis.
+        experimento.setMode(entrada.value as import('./scene/experiment').ExperimentMode);
+        atualizarLab();
+      };
+    }
+    el<HTMLInputElement>('lab-exp').oninput = event => {
+      const valor = Number((event.target as HTMLInputElement).value);
+      experimento.setExposure(valor);
+      el('lab-exp-val').textContent = valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    };
+    // Números de desempenho enquanto o painel está aberto. Fora do passeio não há tempo de quadro:
+    // a cena só desenha quando algo muda, e inventar um número ali seria mentira.
+    let relogio = 0;
+    const mostrarNumeros = () => {
+      const n = scene!.stats();
+      el('lab-stats').textContent = `${n.calls} draw calls · ${n.triangles.toLocaleString('pt-BR')} triângulos · `
+        + (n.frameMs === null ? 'tempo de quadro só durante o passeio' : `${n.frameMs.toFixed(1)} ms/quadro (${(1000 / n.frameMs).toFixed(0)} FPS)`);
+    };
+    el('scene-lab').addEventListener('toggle', () => {
+      window.clearInterval(relogio);
+      if (!(el('scene-lab') as HTMLDetailsElement).open) return;
+      mostrarNumeros();
+      relogio = window.setInterval(mostrarNumeros, 500);
+    });
+    // As cores de conferência são o instrumento que separa cômodo com cota impressa de cômodo sem
+    // cota. O experimento pinta o living por cima delas, então os dois não podem valer juntos.
+    guardaDaPaleta = materiais => {
+      el('lab-modes').classList.toggle('desligado', !materiais);
+      for (const entrada of document.querySelectorAll<HTMLInputElement>('input[name="lab-mode"]')) entrada.disabled = !materiais;
+      if (!materiais) experimento.setMode('atual');
+      atualizarLab();
+      if (!materiais) el('lab-note').textContent = 'Experimento suspenso enquanto as cores de conferência estão ligadas: elas são a leitura que separa cômodo conferido de cômodo sem cota, e o experimento pintaria o living por cima.';
+    };
+    atualizarLab();
+  }
+
   renderScene();
 }).catch(error => {
   el('webgl-status').textContent = `Visualização 3D indisponível. A planta e o catálogo continuam disponíveis. ${(error as Error).message}`;

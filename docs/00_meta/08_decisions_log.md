@@ -145,3 +145,31 @@ Decisão: o toque ganha gestos próprios, e não uma emulação de mouse. Um ded
 Andar é o que não cabe em gesto: o arrasto já está ocupado girando a vista, e não há teclado. Entram quatro botões sobre a cena, visíveis apenas em ponteiro grosso, que seguram exatamente as mesmas teclas que o teclado seguraria — a função de movimento não sabe de onde veio a intenção.
 
 Alternativa descartada: dedo parado avança. Ficaria ambíguo com o arrasto lento e não teria como andar para trás nem de lado.
+
+## D024 — 07/09/2026 — Experimento visual do LIVING, com três opções e restauração declarada
+
+Primeira rodada do experimento de aparência, autorizada pelo usuário depois do estudo. Vale para um cômodo só, nasce desligada e vive apenas no editor local: `npm run build:visita` não produz o pedaço `experiment` — verificado na saída do build, não suposto.
+
+Três opções, e o que cada uma toca:
+
+- **Atual** — nada aplicado. Restaura curva de tom, exposição, sombras, as duas luzes e os materiais ao estado capturado na construção.
+- **Acabamentos** — troca materiais só do living, acende teto e rodapé só do living. **Nenhuma configuração global é tocada**, e é isso que permite afirmar, sem ressalva, que os outros cômodos não mudam neste modo. São quatro mudanças ao mesmo tempo, não uma variável isolada, e o painel diz isso.
+- **Iluminação** — o acima mais curva de tom ACES, exposição ajustável, sombras e um cenário ilustrativo de sol. Curva de tom e luzes são **globais**: os demais cômodos **mudam** neste modo. Afirmar o contrário seria falso, então o painel afirma o oposto.
+
+Trocar de opção não remonta a cena e não reposiciona a câmera. Foi o que decidiu a arquitetura: `show()` reconstrói tudo e reenquadra, então o experimento nunca passa por ele — mexe em material e visibilidade sobre as malhas existentes, que ganharam etiqueta de cômodo e de tipo em `userData`.
+
+O experimento não pode conviver com as cores de conferência, que são o instrumento que separa cômodo com cota impressa de cômodo sem cota. Ligar a conferência suspende o experimento e diz por quê. Nomes no chão e cotas ganharam `toneMapped: false`: são leitura, não superfície iluminada, e não podem mudar de contraste com a exposição.
+
+O sol é **cenário ilustrativo declarado**, não simulação: não há orientação solar nem horário confirmados para este apartamento, e azimute e elevação são escolha de aparência. A hemisférica de preenchimento existe porque não há luz indireta nesta rodada; sem ela, um interior fechado ficaria preto fora do facho.
+
+Alternativa descartada: duplicar a geometria do living numa segunda cena de laboratório. Daria isolamento perfeito e criaria uma segunda fonte da verdade sobre o apartamento, que é exatamente o que este projeto evita desde a F1.
+
+## D025 — 07/09/2026 — Parquete gerado por regra, não recortado de fotografia
+
+O padrão em espinha é gerado (`src/scene/parquet.ts`), não recortado das fotos. Um recorte traria junto a perspectiva, a sombra e o reflexo do dia da foto; repetido no piso inteiro, o mesmo reflexo apareceria dezenas de vezes. As fotografias entram como referência de proporção, direção e cor.
+
+A geometria fecha por construção: as tábuas se repetem pelos vetores ortogonais u = (a, a) e v = (−b, b), e o menor ladrilho alinhado aos eixos é 2·q·a, onde q é o menor inteiro que torna q·a/b inteiro. Para 7 × 21 cm, q = 1 e o ladrilho tem 42 cm. O ladrilho usado é o triplo disso, 1,26 m: repetir 42 cm numa sala de 45 m² poria a mesma tábua clara em cena umas 450 vezes, e o olho encontra essa grade.
+
+As UVs do piso já estão em metros — `ShapeGeometry` emite as coordenadas do vértice como UV e `montarPiso` monta a forma em metros —, então a repetição é o inverso do ladrilho, sem gerar UV e contínua entre cômodos. A rotação de 45° é aplicada na textura, com repetição igual nos dois eixos; desigual, ela viraria cisalhamento e as tábuas deixariam de ser retângulos.
+
+Tamanho do taco: `tacoLength` 0,21 m e `tacoWidth` 0,07 m, **estimados**, do taco brasileiro corrente da época. Não foram medidos e nenhuma cota da planta os informa.

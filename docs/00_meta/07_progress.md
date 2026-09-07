@@ -339,3 +339,22 @@ Não verificado: aparência em navegador, fluxo real de cliques/importação/dow
 Aviso observado: chunk Three.js com cerca de 539 kB minificado / 134 kB gzip; carregamento separado. Ver detalhes em KNOWN_ISSUES.
 
 Próximo passo: executar roteiro manual F0, obter medidas confiáveis e revisar escala/traçado do living antes de construir o piloto F1. Nenhuma escala foi preenchida nem confirmada no JSON inicial.
+
+## 07/09/2026 — Experimento visual do LIVING (primeira rodada)
+
+Entregue: materiais PBR no living com rugosidade e metalicidade declaradas no dado, textura de parquete em espinha gerada por regra e repetida em escala métrica, teto branco no pé-direito, rodapé branco recortado pelos vãos, cenário ilustrativo de luz natural com sombras, e um painel local com as três opções de comparação. Ver D024 e D025.
+
+Arquivos novos: `src/scene/parquet.ts` (padrão puro), `src/scene/experiment.ts` (modo experimental), `tests/experiment.test.ts`.
+
+Evidências executadas:
+- `npm test`: **161 testes passaram** em 5 arquivos (eram 144). Os 17 novos cobrem escala do ladrilho, tamanho das tábuas contra os parâmetros, recusa de proporção que não fecha ladrilho, recorte do rodapé nas portas e continuidade sob a janela, lado interno do rodapé, restauração exata das configurações globais, ausência de mudança global no modo Acabamentos, identidade dos materiais entre trocas de opção e vidro que não projeta sombra.
+- `npm run typecheck` e `npm run build`: limpos.
+- `npm run build:visita`: **não produz o pedaço `experiment`**. O experimento não entra na imagem publicada. O pedaço `preview` foi de 584,67 kB para 585,39 kB (+0,7 kB), pelas etiquetas nas malhas e pelo aviso de remontagem.
+- Padrão do parquete conferido **fora da aplicação**: a saída real de `herringbone(0,21, 0,07)` foi renderizada em imagem, 2 × 2 ladrilhos e depois 5,3 × 5,3 m girados 45°. Zero pixels com sobreposição, nenhuma emenda visível, e o desenho corresponde ao que `foto_sala_01` e `foto_sala_03` mostram.
+- Comportamento do cache de sombra conferido no código instalado: `WebGLShadowMap.js` interrompe o passe quando `autoUpdate` é falso e `needsUpdate` também, e zera `needsUpdate` depois de desenhar. O experimento desliga o automático e invalida o mapa na remontagem da cena, na troca de opção e quando o teto entra ou sai.
+
+Dois defeitos encontrados por teste durante a implementação, ambos corrigidos: materiais criados a cada troca de opção em vez de uma vez por remontagem, e `rebuild` limpando o registro dos materiais originais antes de devolvê-los, o que deixava uma malha viva apontando para material já descartado.
+
+**Não verificado: tudo o que depende de ver a tela.** Nenhum navegador nesta sessão. Aparência, exposição, contraste, acne de sombra, desempenho e legibilidade dos rótulos sobre o piso texturizado dependem da revisão do usuário. Roteiro em `../40_delivery/F4_EXPERIMENTO_LIVING.md`.
+
+Próximo passo: revisão visual do usuário pelo roteiro. Sofá em GLB e iluminação indireta ficam para depois dessa revisão, por decisão dele.

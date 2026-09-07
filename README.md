@@ -43,7 +43,7 @@ O rascunho é salvo no armazenamento local do navegador, sujeito a disponibilida
 - `docs/90_references/`: planta e 11 fotos originais, intactas.
 - `public/assets/references/`: cópias idênticas usadas pela aplicação e pelo build.
 - `src/data/project.json`: inventário das fotos e calibração portátil.
-- `src/data/apartment.json`: traçado estrutural dos 16 cômodos, com paredes, vãos e as conferências contra as cotas impressas.
+- `src/data/apartment.json`: traçado estrutural dos 16 cômodos, com paredes, vãos, materiais de acabamento e as conferências contra as cotas impressas.
 - `src/data/pilot.ts`: contrato do traçado e conversão dos contornos para metros.
 - `src/data/validation.ts`: contrato executável das fotos e da calibração, com poses, e validação atômica de importação.
 - `src/plan/spatial.ts`: escala, transformação, inversa, conferência e azimutes.

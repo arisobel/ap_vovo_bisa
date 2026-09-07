@@ -10,7 +10,11 @@ Requisitos e critérios completos: `PRD.md`, seções 4 e 8.
 | F3 | Passeio, colisões e planta sincronizada | Percurso testado sem atravessar barreiras |
 | F4 | Materiais e elementos selecionados | Aparência melhor sem regressão de navegação |
 
-Fase atual: F0, F1, F2 e F3 concluídas. O passeio tem colisão e a planta acompanha quem caminha, com seta que mostra posição e direção. Falta a F4: materiais e elementos.
+Fase atual: F0 a F3 concluídas. A F4 entregou sua primeira parte em 07/09/2026: acabamentos e esquadrias.
+
+Entregue na F4: dez materiais nomeados com cor, estado e evidência; piso, parede e teto declarados por cômodo; batente em todo vão e vidro em toda janela; alternância entre as cores de acabamento e as cores de conferência, para não perder a leitura que distingue cômodo com cota impressa de cômodo sem cota.
+
+Falta na F4, e nenhuma parte foi começada: estampas e desenhos (o parquete em espinha e a flor do azulejo são cor lisa hoje), rodapés, folhas de porta, louças, armários embutidos e móveis soltos. Móveis soltos ficam por último por decisão do próprio PRD, seção 9, item 6, cujo default é estrutura e elementos fixos primeiro — o usuário ainda não confirmou essa preferência.
 
 A F2 passou em 07/09/2026: as 11 fotografias foram associadas a um ambiente, marcadas com ponto e direção na planta e **confirmadas pelo usuário**, cada uma com evidência escrita. Sete delas foram marcadas do cômodo vizinho olhando para dentro do alvo, o que é o registro correto: a pose diz onde a câmera estava, não o que a foto mostra.
 

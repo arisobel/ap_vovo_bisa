@@ -1,5 +1,23 @@
 # Progresso
 
+## 07/09/2026 — F4, primeira parte: acabamentos lidos das fotos e esquadrias
+
+O PRD proíbe esticar fotografia sobre parede como textura e pede materiais simples. Então a cor veio das fotos por amostragem, não por projeção.
+
+Dez materiais nomeados entraram em `apartment.json`, cada um com cor, estado e evidência que registra a foto e a região de pixels de onde a cor saiu. Cada cômodo declara piso, parede e teto apontando para esses nomes; nenhum hexadecimal solto chega à cena (D016). O validador recusa cor fora de `#rrggbb`, material sem evidência e acabamento que aponte para material inexistente.
+
+Antes de amostrar, cada foto é corrigida pelo próprio branco: a superfície que sabemos ser tinta branca vira #f0ede8 e o mesmo ganho por canal vale para as outras amostras daquela foto. Sem isso a parede do LIVING entraria como #bbb6ae — a cor da luz, não a da tinta. Em foto_banheiro_01 a correção é quase nula, porque o assento branco já lê #edecec: ali o bege dos azulejos é real.
+
+O que as fotos mostraram e virou dado: parquete escuro no LIVING (#854c29) contra parquete mel nos dormitórios e no escritório (#d0824f) — são pisos diferentes; cerâmica terracota na cozinha, no corredor de serviço e na área de serviço; cerâmica bege e azulejo bege estampado nos banheiros; esquadrias de alumínio cinza-claro. Cinco cômodos não aparecem em foto nenhuma e receberam o acabamento do vizinho de mesma natureza, dito na evidência. O terraço ficou em cinza neutro, para não afirmar o que ninguém viu.
+
+Todo vão ganhou batente, e toda janela ganhou vidro translúcido. Nada disso vira barreira: a colisão continua lendo apenas os trechos cheios de parede, e há teste que compara a contagem de barreiras antes e depois. Folha de porta não entrou de propósito — fecharia passagens hoje livres, o que seria a regressão de navegação que o critério da F4 proíbe.
+
+O botão **Cores** alterna entre acabamento e conferência: a leitura que distingue cômodo com cota impressa de cômodo sem cota não foi perdida, só deixou de ser a única.
+
+105 testes passam; TypeScript e build limpos. Conferido em render próprio a partir da geometria exportada pelo código do app.
+
+Falta na F4: estampas (espinha, flor do azulejo, junta), rodapés, folhas de porta, louças, armários e móveis soltos. A preferência visual da seção 9, item 6 do PRD continua sem confirmação do usuário.
+
 ## 07/09/2026 — F3 concluída: a planta acompanha quem caminha
 
 O passeio já tinha colisão; faltava saber onde se está. Agora, ao entrar no passeio, uma seta laranja aparece na planta mostrando posição e direção, atualizada a cada passo. A conversão usa `worldToPlan`, a mesma transformação que levanta as paredes, e `headingFromYaw`, inversa exata de `poseRotation` — há teste de ida e volta entre as duas, porque essa é a emenda onde um sinal trocado passaria despercebido.

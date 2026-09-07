@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { checkDeviation, checkTolerance, deriveApartment, deriveRoom, findRoom, initialApartment, validateApartment, wallPieces } from '../src/data/pilot';
+import { checkDeviation, checkTolerance, deriveApartment, deriveRoom, findRoom, initialApartment, palette, validateApartment, wallPieces } from '../src/data/pilot';
 import { calibrate } from '../src/plan/spatial';
 
 // Escala proposta pela cota 9,12 m da fachada sul do living. Não é medida conferida em campo.
@@ -33,7 +33,7 @@ describe('estrutura traçada sobre a planta', () => {
 
   it('recorta os vãos das paredes do escritório', () => {
     const apartment = initialApartment();
-    const derived = deriveRoom(findRoom(apartment, 'escritorio'), apartment.parameters, transform);
+    const derived = deriveRoom(findRoom(apartment, 'escritorio'), apartment.parameters, apartment.materials, transform);
     const leste = derived.walls.find(w => w.id === 'escritorio-leste')!;
     expect(leste.length).toBeCloseTo(159 * transform.metersPerPixel, 6);
     // Janela no meio da parede: trecho antes, peitoril, verga e trecho depois.
@@ -160,7 +160,7 @@ describe('altura por parede', () => {
     expect(railingHeight.value).toBeLessThan(wallHeight.value);
     expect(railingHeight.status).toBe('estimado');
     for (const room of apartment.rooms) {
-      const derived = deriveRoom(room, apartment.parameters, transform);
+      const derived = deriveRoom(room, apartment.parameters, apartment.materials, transform);
       for (const wall of derived.walls) {
         const esperado = gradil.includes(wall.id) ? railingHeight.value : wallHeight.value;
         expect(wall.height, `${wall.id}`).toBeCloseTo(esperado, 9);
@@ -196,5 +196,49 @@ describe('altura por parede', () => {
     for (const room of apartment.rooms) for (const wall of room.walls) delete wall.heightParameter;
     const validado = validateApartment(apartment);
     expect(validado.rooms.every(r => r.walls.every(w => w.heightParameter === 'wallHeight'))).toBe(true);
+  });
+});
+
+describe('acabamentos', () => {
+  it('resolve cor de piso, parede e teto de todo cômodo', () => {
+    const apartment = initialApartment();
+    for (const room of apartment.rooms) {
+      const cores = palette(room, apartment.materials);
+      for (const cor of [cores.floor, cores.wall, cores.ceiling]) expect(cor, room.id).toMatch(/^#[0-9a-f]{6}$/);
+      expect(room.finishes.evidence.trim().length, `${room.id} sem evidência de acabamento`).toBeGreaterThan(0);
+    }
+  });
+
+  it('exige que todo material declarado tenha cor válida, estado e evidência', () => {
+    const materiais = Object.entries(initialApartment().materials);
+    expect(materiais.length).toBeGreaterThan(0);
+    for (const [nome, m] of materiais) {
+      expect(m.color, nome).toMatch(/^#[0-9a-f]{6}$/);
+      expect(['proposto', 'confirmado'], nome).toContain(m.status);
+      expect(m.evidence.trim().length, nome).toBeGreaterThan(0);
+    }
+  });
+
+  it('recusa acabamento que aponta para material inexistente', () => {
+    const apartment = structuredClone(initialApartment()) as any;
+    apartment.rooms[0].finishes.floor = 'marmore-carrara';
+    expect(() => validateApartment(apartment)).toThrow(/material inexistente/);
+  });
+
+  it('recusa cor fora do formato e material sem evidência', () => {
+    const semHex = structuredClone(initialApartment()) as any;
+    semHex.materials['parede-branca'].color = 'branco';
+    expect(() => validateApartment(semHex)).toThrow(/cor inválida/);
+    const semEvidencia = structuredClone(initialApartment()) as any;
+    semEvidencia.materials['parede-branca'].evidence = '  ';
+    expect(() => validateApartment(semEvidencia)).toThrow(/sem evidência/);
+  });
+
+  it('distingue o parquete escuro do living do parquete mel dos dormitórios', () => {
+    const apartment = initialApartment();
+    const cor = (id: string) => palette(findRoom(apartment, id), apartment.materials).floor;
+    expect(cor('living')).not.toBe(cor('dormitorio-1'));
+    expect(cor('dormitorio-1')).toBe(cor('escritorio'));
+    expect(cor('cozinha')).toBe(cor('area-servico'));
   });
 });

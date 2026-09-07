@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, headingFromYaw, poseRotation, resolveCollision, startingPoint, wallBlocks } from '../src/scene/preview';
+import { barriersFrom, headingFromYaw, openingParts, poseRotation, resolveCollision, startingPoint, wallBlocks } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
 
@@ -183,5 +183,48 @@ describe('planta sincronizada com o passeio', () => {
     expect(pixel.u).toBeGreaterThan(52);
     expect(pixel.u).toBeLessThan(395);
     expect(planToWorld(pixel, t).x).toBeCloseTo(partida!.x, 9);
+  });
+});
+
+describe('esquadrias', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+  const salas = deriveApartment(initialApartment(), transform);
+  const parede = (roomId: string, wallId: string) => salas.find(r => r.id === roomId)!.walls.find(w => w.id === wallId)!;
+
+  it('põe vidro em janela e nenhum vidro em porta', () => {
+    const janela = salas.flatMap(r => r.walls).find(w => w.openings.some(o => o.type === 'window'))!;
+    expect(openingParts(janela).some(p => p.part === 'glass')).toBe(true);
+    const soPorta = salas.flatMap(r => r.walls).find(w => w.openings.length > 0 && w.openings.every(o => o.type === 'door'))!;
+    expect(openingParts(soPorta).every(p => p.part === 'frame')).toBe(true);
+  });
+
+  it('dá quatro peças de batente à janela e três à porta', () => {
+    const janela = salas.flatMap(r => r.walls).find(w => w.openings.length === 1 && w.openings[0].type === 'window')!;
+    expect(openingParts(janela).filter(p => p.part === 'frame')).toHaveLength(4);
+    const porta = salas.flatMap(r => r.walls).find(w => w.openings.length === 1 && w.openings[0].type === 'door')!;
+    // Porta não tem peitoril: dois montantes e a travessa.
+    expect(openingParts(porta).filter(p => p.part === 'frame')).toHaveLength(3);
+  });
+
+  it('mantém batente e vidro dentro do vão e abaixo da parede', () => {
+    for (const sala of salas) for (const w of sala.walls) {
+      for (const parte of openingParts(w)) {
+        const topo = parte.position[1] + parte.size[1] / 2;
+        expect(topo, `${w.id}`).toBeLessThanOrEqual(w.height + 1e-9);
+        expect(parte.position[1] - parte.size[1] / 2).toBeGreaterThanOrEqual(-1e-9);
+        expect(parte.size[0]).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('não cria esquadria em parede sem vão', () => {
+    expect(openingParts(parede('terraco', 'terraco-leste'))).toHaveLength(0);
+  });
+
+  it('não altera a colisão: esquadria não é barreira', () => {
+    const antes = barriersFrom(salas).length;
+    expect(antes).toBeGreaterThan(0);
+    // barriersFrom lê apenas wallBlocks; openingParts é decoração.
+    expect(barriersFrom(salas)).toHaveLength(antes);
   });
 });

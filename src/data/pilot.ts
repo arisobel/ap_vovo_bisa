@@ -16,8 +16,14 @@ export type Check = { id: string; kind: 'length' | 'area'; printed: number; pixe
 // Tolerância aceita por confiança. Não é margem de erro medida: é o quanto se admite de divergência antes de tratar o traçado como suspeito.
 export const checkTolerance: Record<Confidence, number> = { alta: 1.5, media: 3.5 };
 export type Verification = 'cota-impressa' | 'sem-cota';
-export type Room = { id: string; name: string; status: 'proposto'; verification: Verification; evidence: string; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
-export type Apartment = { schemaVersion: 2; planId: string; planWidth: number; planHeight: number; convention: string; parameters: Parameters; rooms: Room[] };
+// Acabamento é cor nomeada com evidência, como a altura de parede: nenhum hexadecimal solto na cena.
+export type Material = { color: string; status: 'proposto' | 'confirmado'; evidence: string };
+export type Finishes = { floor: string; wall: string; ceiling: string; evidence: string };
+export type Palette = { floor: string; wall: string; ceiling: string };
+// Usado quando o arquivo não declara acabamento, para que as bases anteriores continuem válidas.
+export const defaultFinishes: Finishes = { floor: 'piso-externo', wall: 'parede-branca', ceiling: 'teto-branco', evidence: 'Acabamento não declarado no arquivo; neutro adotado.' };
+export type Room = { id: string; name: string; status: 'proposto'; verification: Verification; evidence: string; finishes: Finishes; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
+export type Apartment = { schemaVersion: 2; planId: string; planWidth: number; planHeight: number; convention: string; parameters: Parameters; materials: Record<string, Material>; rooms: Room[] };
 export const parameterNames: ParameterName[] = ['wallHeight', 'railingHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight'];
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(`Estrutura: ${message}`); }
 const record = (v: unknown): Record<string, any> => { assert(v && typeof v === 'object' && !Array.isArray(v), 'objeto inválido.'); return v as Record<string, any>; };
@@ -62,10 +68,42 @@ function validateContour(value: unknown, planWidth: number, planHeight: number):
   return contour;
 }
 
-function validateRoom(value: unknown, parameters: Parameters, planWidth: number, planHeight: number): Room {
+const HEX = /^#[0-9a-f]{6}$/;
+function validateMaterials(value: unknown): Record<string, Material> {
+  const p = record(value);
+  const nomes = Object.keys(p);
+  assert(nomes.length > 0 && nomes.length <= 64, 'lista de materiais inválida.');
+  const materiais: Record<string, Material> = {};
+  for (const nome of nomes) {
+    assert(identifier(nome), `identificador de material inválido: ${nome}.`);
+    const m = record(p[nome]);
+    assert(typeof m.color === 'string' && HEX.test(m.color), `cor inválida em ${nome}: use #rrggbb minúsculo.`);
+    assert(m.status === 'proposto' || m.status === 'confirmado', `estado inválido em ${nome}.`);
+    assert(evidence(m.evidence), `material ${nome} sem evidência escrita.`);
+    materiais[nome] = { color: m.color, status: m.status, evidence: m.evidence };
+  }
+  return materiais;
+}
+
+function validateFinishes(value: unknown, materiais: Record<string, Material>, roomId: string): Finishes {
+  if (value === undefined || value === null) return { ...defaultFinishes };
+  const f = record(value);
+  const acabamento = {} as Finishes;
+  for (const parte of ['floor', 'wall', 'ceiling'] as const) {
+    const nome = f[parte];
+    assert(typeof nome === 'string' && materiais[nome] !== undefined, `acabamento ${parte} de ${roomId} aponta para material inexistente: ${String(nome)}.`);
+    acabamento[parte] = nome;
+  }
+  assert(evidence(f.evidence), `acabamento de ${roomId} sem evidência escrita.`);
+  acabamento.evidence = f.evidence as string;
+  return acabamento;
+}
+
+function validateRoom(value: unknown, parameters: Parameters, materiais: Record<string, Material>, planWidth: number, planHeight: number): Room {
   const p = record(value);
   assert(identifier(p.id) && typeof p.name === 'string' && p.name.trim().length > 0 && p.status === 'proposto' && evidence(p.evidence), 'identificação, estado ou evidência do cômodo inválidos.');
   assert(p.verification === 'cota-impressa' || p.verification === 'sem-cota', `verificação inválida em ${p.id}.`);
+  const finishes = validateFinishes(p.finishes, materiais, p.id as string);
   const contour = validateContour(p.contour, planWidth, planHeight);
   assert(Array.isArray(p.walls) && p.walls.length > 0 && p.walls.length <= contour.length, `paredes inválidas em ${p.id}.`);
   const ids = new Set<string>(), edges = new Set<number>();
@@ -113,7 +151,7 @@ function validateRoom(value: unknown, parameters: Parameters, planWidth: number,
     assert(c.confidence === 'alta' || c.confidence === 'media', 'confiança da conferência inválida.');
     return { id: c.id, kind: c.kind, printed: c.printed, pixels: c.pixels, confidence: c.confidence, evidence: c.evidence };
   });
-  return { id: p.id, name: p.name, status: 'proposto', verification: p.verification, evidence: p.evidence, contour, walls, openings, checks };
+  return { id: p.id, name: p.name, status: 'proposto', verification: p.verification, evidence: p.evidence, finishes, contour, walls, openings, checks };
 }
 
 export function validateApartment(value: unknown): Apartment {
@@ -121,15 +159,16 @@ export function validateApartment(value: unknown): Apartment {
   assert(p.schemaVersion === 2 && p.planId === 'planta_apartamento' && evidence(p.convention), 'versão, planta ou convenção incompatível.');
   assert(finite(p.planWidth, 1, 1e5) && finite(p.planHeight, 1, 1e5), 'dimensões da planta inválidas.');
   const parameters = validateParameters(p.parameters);
+  const materials = validateMaterials(p.materials);
   assert(Array.isArray(p.rooms) && p.rooms.length > 0 && p.rooms.length <= 40, 'lista de cômodos inválida.');
   const roomIds = new Set<string>();
   const rooms = p.rooms.map((item: unknown) => {
-    const room = validateRoom(item, parameters, p.planWidth, p.planHeight);
+    const room = validateRoom(item, parameters, materials, p.planWidth, p.planHeight);
     assert(!roomIds.has(room.id), `cômodo duplicado: ${room.id}.`);
     roomIds.add(room.id);
     return room;
   });
-  return { schemaVersion: 2, planId: 'planta_apartamento', planWidth: p.planWidth, planHeight: p.planHeight, convention: p.convention, parameters, rooms };
+  return { schemaVersion: 2, planId: 'planta_apartamento', planWidth: p.planWidth, planHeight: p.planHeight, convention: p.convention, parameters, materials, rooms };
 }
 
 export function initialApartment(): Apartment { return validateApartment(seed); }
@@ -173,7 +212,17 @@ export function wallPieces(length: number, height: number, openings: { offset: n
   add(cursor, length, 0, height); return pieces;
 }
 
-export function deriveRoom(room: Room, parameters: Parameters, transform: Transform) {
+// Resolve os nomes de acabamento do cômodo nas cores declaradas.
+export function palette(room: Room, materials: Record<string, Material>): Palette {
+  const cor = (nome: string) => {
+    const m = materials[nome];
+    assert(m, `material não declarado: ${nome}.`);
+    return m.color;
+  };
+  return { floor: cor(room.finishes.floor), wall: cor(room.finishes.wall), ceiling: cor(room.finishes.ceiling) };
+}
+
+export function deriveRoom(room: Room, parameters: Parameters, materials: Record<string, Material>, transform: Transform) {
   assert(Number.isFinite(transform.metersPerPixel) && transform.metersPerPixel > 0 && Number.isFinite(transform.origin.u) && Number.isFinite(transform.origin.v), 'transformação inválida.');
   const contour = room.contour.map(point => planToWorld(point, transform));
   const walls = room.walls.map(w => {
@@ -184,9 +233,9 @@ export function deriveRoom(room: Room, parameters: Parameters, transform: Transf
     return { id: w.id, start, end, length, height, heightParameter: w.heightParameter, thickness: parameters.wallThickness.value, openings, pieces: wallPieces(length, height, openings) };
   });
   const checks = room.checks.map(c => ({ ...c, ...checkDeviation(c, transform) }));
-  return { id: room.id, name: room.name, verification: room.verification, contour, walls, checks };
+  return { id: room.id, name: room.name, verification: room.verification, finishes: palette(room, materials), contour, walls, checks };
 }
 
 export function deriveApartment(apartment: Apartment, transform: Transform) {
-  return apartment.rooms.map(room => deriveRoom(room, apartment.parameters, transform));
+  return apartment.rooms.map(room => deriveRoom(room, apartment.parameters, apartment.materials, transform));
 }

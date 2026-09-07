@@ -38,6 +38,18 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D016 - Cor de acabamento é material nomeado, amostrado da foto e corrigido pelo branco dela (07/09/2026)
+
+O PRD proíbe esticar uma fotografia sobre a parede como textura ortogonal e pede materiais simples. Restava decidir de onde vem cada cor.
+
+Decisao: cada acabamento é um material nomeado em `apartment.json`, com cor, estado e evidência, e cada cômodo aponta para três deles (piso, parede, teto). Nenhum hexadecimal solto entra na cena, pela mesma razão da altura de parede: cor é estimativa com procedência, e trocar uma delas tem de mover todos os cômodos que a usam.
+
+A cor vem da mediana de uma região de pixels da fotografia original, com a região registrada na evidência. Mediana, e não média, porque o verniz do parquete produz reflexos claros que puxariam a média.
+
+Antes de usar a amostra, cada foto é corrigida pelo proprio branco: a superficie que sabemos ser tinta branca vira #f0ede8, e o mesmo ganho por canal se aplica as demais amostras daquela foto. Sem isso, a parede branca do LIVING entraria na cena como #bbb6ae, que e a cor da luz da foto, nao a da tinta - o apartamento inteiro ficaria encardido. Em foto_banheiro_01 a correcao e quase nula, porque o assento branco ja le #edecec: a foto estava bem exposta e o bege dos azulejos e real.
+
+Alternativa descartada: projetar a fotografia na geometria. Alem de proibida pelo PRD, carregaria moveis, cortinas e sombras para dentro das paredes.
+
 ## D015 - Altura de parede é parâmetro nomeado, não número por parede (07/09/2026)
 
 O terraço precisava de guarda-corpo mais baixo que o pé-direito. Havia duas formas: um campo `height` livre em cada parede, ou a parede escolher entre parâmetros nomeados.

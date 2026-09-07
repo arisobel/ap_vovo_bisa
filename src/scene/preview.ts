@@ -3,8 +3,13 @@ import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
 type Ponto = { x: number; z: number };
 type Trecho = { start: number; end: number; base: number; height: number };
-export type SceneWall = { id: string; start: Ponto; end: Ponto; height: number; thickness: number; pieces: Trecho[] };
-export type SceneRoom = { id: string; name: string; verification: 'cota-impressa' | 'sem-cota'; contour: Ponto[]; walls: SceneWall[] };
+type Vao = { type: 'door' | 'window'; offset: number; width: number; base: number; height: number };
+export type SceneWall = { id: string; start: Ponto; end: Ponto; height: number; thickness: number; openings: Vao[]; pieces: Trecho[] };
+export type ScenePalette = { floor: string; wall: string; ceiling: string };
+export type SceneRoom = { id: string; name: string; verification: 'cota-impressa' | 'sem-cota'; finishes: ScenePalette; contour: Ponto[]; walls: SceneWall[] };
+// 'materiais' pinta com os acabamentos lidos nas fotos; 'conferencia' volta às cores que
+// distinguem cômodo com cota impressa de cômodo sem cota. As duas leituras são úteis.
+export type PaletteMode = 'materiais' | 'conferencia';
 export type PreviewHandle = {
   show(rooms: SceneRoom[] | null): void;
   setWallsVisible(visible: boolean): void;
@@ -13,6 +18,7 @@ export type PreviewHandle = {
   enterWalk(): void;
   exitWalk(): void;
   viewFromPose(pose: PoseView | null): void;
+  setPalette(mode: PaletteMode): void;
   setWalkListener(listener: (state: WalkState | null) => void): void;
   dispose(): void;
 };
@@ -20,6 +26,8 @@ export type PreviewHandle = {
 const PISO_CONFERIDO = '#e9d9cc';
 const PISO_SEM_COTA = '#d5dde9';
 const PAREDE = '#cfcabf';
+const ESQUADRIA = '#d8d9d8';
+const VIDRO = '#cfe0e6';
 export const ALTURA_OLHOS = 1.6;
 const ALTURA_CORPO = 1.8;
 const RAIO_CORPO = .28;
@@ -34,6 +42,49 @@ export function headingFromYaw(yaw: number): number {
 }
 
 export type WallBlock = { position: [number, number, number]; size: [number, number, number]; rotationY: number };
+
+export type OpeningPart = WallBlock & { part: 'frame' | 'glass' };
+
+// Batente e vidro de um vão. Não fecha passagem: o batente é uma moldura fina na borda do vão
+// e o vidro só aparece em janela, onde o peitoril já barra quem caminha.
+export function openingParts(wall: SceneWall, frameWidth = .06): OpeningPart[] {
+  const comprimento = Math.hypot(wall.end.x - wall.start.x, wall.end.z - wall.start.z);
+  if (!(comprimento > 0)) return [];
+  const dx = (wall.end.x - wall.start.x) / comprimento;
+  const dz = (wall.end.z - wall.start.z) / comprimento;
+  const nx = dz, nz = -dx;
+  const rotationY = Math.atan2(-dz, dx);
+  const partes: OpeningPart[] = [];
+  const emMetros = (centro: number, y: number, largura: number, altura: number, espessura: number, part: 'frame' | 'glass') => {
+    if (!(largura > 0) || !(altura > 0)) return;
+    partes.push({
+      position: [
+        wall.start.x + dx * centro + nx * wall.thickness / 2,
+        y,
+        wall.start.z + dz * centro + nz * wall.thickness / 2,
+      ],
+      size: [largura, altura, espessura],
+      rotationY,
+      part,
+    });
+  };
+  for (const vao of wall.openings) {
+    const topo = vao.base + vao.height;
+    if (!(vao.width > 0) || !(vao.height > 0) || topo > wall.height + 1e-9) continue;
+    const espessura = wall.thickness + .02;
+    // Montantes laterais e travessa superior; peitoril só quando o vão não nasce no piso.
+    emMetros(vao.offset + frameWidth / 2, vao.base + vao.height / 2, frameWidth, vao.height, espessura, 'frame');
+    emMetros(vao.offset + vao.width - frameWidth / 2, vao.base + vao.height / 2, frameWidth, vao.height, espessura, 'frame');
+    emMetros(vao.offset + vao.width / 2, topo - frameWidth / 2, vao.width, frameWidth, espessura, 'frame');
+    if (vao.base > 0) emMetros(vao.offset + vao.width / 2, vao.base + frameWidth / 2, vao.width, frameWidth, espessura, 'frame');
+    if (vao.type === 'window') {
+      const largura = Math.max(0, vao.width - frameWidth * 2);
+      const altura = Math.max(0, vao.height - frameWidth * (vao.base > 0 ? 2 : 1));
+      emMetros(vao.offset + vao.width / 2, vao.base + (vao.base > 0 ? frameWidth : 0) + altura / 2, largura, altura, .02, 'glass');
+    }
+  }
+  return partes;
+}
 
 // Converte os trechos cheios de uma parede em caixas posicionadas no mundo.
 // O contorno é horário na planta, então a parede cresce para fora dele: normal (dz, -dx).
@@ -182,7 +233,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   try { renderer = new WebGLRenderer({ antialias: true, alpha: false }); }
   catch {
     report('WebGL indisponível. A planta, a calibração e as fotos continuam disponíveis.');
-    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setWalkListener() {}, dispose() {} };
+    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setWalkListener() {}, dispose() {} };
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   host.prepend(renderer.domElement);
@@ -217,6 +268,18 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     semCota: new MeshLambertMaterial({ color: PISO_SEM_COTA, side: DoubleSide }),
     parede: new MeshLambertMaterial({ color: PAREDE }),
   };
+  // Um material por cor declarada, reaproveitado: a cena tem centenas de blocos e poucas cores.
+  const porCor = new Map<string, MeshLambertMaterial>();
+  const material = (cor: string, faceDupla = false) => {
+    const chave = `${cor}|${faceDupla}`;
+    let m = porCor.get(chave);
+    if (!m) { m = new MeshLambertMaterial({ color: cor, side: faceDupla ? DoubleSide : undefined }); porCor.set(chave, m); }
+    return m;
+  };
+  const materialEsquadria = new MeshLambertMaterial({ color: ESQUADRIA });
+  const materialVidro = new MeshLambertMaterial({ color: VIDRO, transparent: true, opacity: .34 });
+  let paleta: PaletteMode = 'materiais';
+  let ultimasSalas: SceneRoom[] | null = null;
 
   let limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 };
   let barreiras: Barrier[] = [];
@@ -246,21 +309,32 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     const forma = new Shape();
     room.contour.forEach((p, i) => (i === 0 ? forma.moveTo(p.x, -p.z) : forma.lineTo(p.x, -p.z)));
     forma.closePath();
-    const piso = new Mesh(new ShapeGeometry(forma), room.verification === 'sem-cota' ? materiais.semCota : materiais.conferido);
+    const cor = paleta === 'materiais'
+      ? material(room.finishes.floor, true)
+      : room.verification === 'sem-cota' ? materiais.semCota : materiais.conferido;
+    const piso = new Mesh(new ShapeGeometry(forma), cor);
     piso.rotation.x = -Math.PI / 2;
     pisos.add(piso);
   }
 
-  function montarParede(wall: SceneWall) {
+  function montarParede(wall: SceneWall, room: SceneRoom) {
+    const corParede = paleta === 'materiais' ? material(room.finishes.wall) : materiais.parede;
     for (const bloco of wallBlocks(wall)) {
-      const mesh = new Mesh(new BoxGeometry(bloco.size[0], bloco.size[1], bloco.size[2]), materiais.parede);
+      const mesh = new Mesh(new BoxGeometry(bloco.size[0], bloco.size[1], bloco.size[2]), corParede);
       mesh.position.set(bloco.position[0], bloco.position[1], bloco.position[2]);
       mesh.rotation.y = bloco.rotationY;
+      paredes.add(mesh);
+    }
+    for (const parte of openingParts(wall)) {
+      const mesh = new Mesh(new BoxGeometry(parte.size[0], parte.size[1], parte.size[2]), parte.part === 'glass' ? materialVidro : materialEsquadria);
+      mesh.position.set(parte.position[0], parte.position[1], parte.position[2]);
+      mesh.rotation.y = parte.rotationY;
       paredes.add(mesh);
     }
   }
 
   function show(rooms: SceneRoom[] | null) {
+    ultimasSalas = rooms;
     exitWalk();
     viewFromPose(null);
     limpar(pisos);
@@ -271,7 +345,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     const xs: number[] = [], zs: number[] = [];
     for (const room of rooms) {
       montarPiso(room);
-      for (const wall of room.walls) montarParede(wall);
+      for (const wall of room.walls) montarParede(wall, room);
       for (const p of room.contour) { xs.push(p.x); zs.push(p.z); }
     }
     limites = { minX: Math.min(...xs), maxX: Math.max(...xs), minZ: Math.min(...zs), maxZ: Math.max(...zs) };
@@ -418,6 +492,12 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   return {
     show, setWallsVisible, lookFromTop, frame, enterWalk, exitWalk, viewFromPose,
     setWalkListener(listener) { avisarPasseio = listener; },
+    setPalette(mode) {
+      if (mode === paleta) return;
+      paleta = mode;
+      // Repinta remontando: os materiais são compartilhados por cor, não por malha.
+      if (ultimasSalas) show(ultimasSalas);
+    },
     dispose() {
       exitWalk();
       observer.disconnect();

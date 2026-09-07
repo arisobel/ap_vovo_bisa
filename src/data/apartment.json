@@ -43,6 +43,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Contorno interno do LIVING com recorte do hall. Limite norte em v=501 é corte aberto do piloto para circulação, não parede. Traçado da entrega anterior, preservado sem alteração.",
+      "finishes": {
+        "floor": "piso-parquete-escuro",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "foto_sala_03: parquete escuro em espinha, paredes e teto brancos."
+      },
       "contour": [
         {
           "u": 52,
@@ -189,6 +195,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Retângulo simples. Faces internas por varredura: parede oeste em u=269..274, leste em u=427..431, norte em v=346..351, sul em v=511..515. Duas linhas finas contínuas em v=362 e v=500 atravessam a sala de parede a parede: móveis embutidos rasos de cerca de 0,27 m, não modelados nesta fase. A parede sul é a mesma divisória registrada no LIVING como living-office.",
+      "finishes": {
+        "floor": "piso-parquete-mel",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "foto_quarto_03: parquete mel em espinha, paredes brancas, armário de madeira ao fundo (não modelado)."
+      },
       "contour": [
         {
           "u": 275,
@@ -290,6 +302,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Contorno em L por causa de dois nichos de armário embutido, em cantos opostos: noroeste (u=207..227, v=36..117) e sudeste (u=367..387, v=106..205), ambos com cerca de 0,53 m de profundidade e frente marcada por linha fina contínua. Faces internas por varredura: norte v=31..35, oeste alta u=201..206, degrau v=117..123, oeste baixa u=222..227, sul v=206..211, leste alta u=366..373, travessa v=99..106, leste baixa u=388..392. Os armários são mobiliário e não foram modelados; os nichos, sim, porque são recuos reais de parede.",
+      "finishes": {
+        "floor": "piso-parquete-mel",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "foto_quarto_01: parquete mel em espinha, paredes brancas."
+      },
       "contour": [
         {
           "u": 207,
@@ -442,6 +460,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Retângulo simples, entre o DORMIT. 1 ao norte e o ESCRITÓRIO ao sul. Faces internas por varredura: norte v=206..211 (mesma parede de dorm1-sul), sul v=346..351 (mesma parede de escritorio-norte), oeste u=270..274, leste u=427..431 (mesma fachada de escritorio-leste). Linha fina contínua em v=326 atravessa a sala inteira: frente de armário embutido de cerca de 0,53 m junto à parede sul, mobiliário não modelado.",
+      "finishes": {
+        "floor": "piso-parquete-mel",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "foto_quarto_02 mostra o ambiente desde o corredor; piso e paredes seguem o padrão dos outros dormitórios."
+      },
       "contour": [
         {
           "u": 275,
@@ -543,6 +567,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Retângulo simples no setor de serviço. Faces internas por varredura: oeste u=46..51 (fachada), leste u=157..162, norte v=352..356 (divisória fina de 5 px com o banheiro de serviço), sul v=498..503. Nenhuma linha de bancada ou armário foi detectada dentro do cômodo, o que é surpreendente para uma cozinha: a planta provavelmente não desenha o mobiliário fixo aqui.",
+      "finishes": {
+        "floor": "piso-ceramico-terracota",
+        "wall": "azulejo-bege",
+        "ceiling": "teto-branco",
+        "evidence": "foto_cozinha_01: cerâmica terracota e azulejo bege estampado do piso ao teto."
+      },
       "contour": [
         {
           "u": 52,
@@ -666,6 +696,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Retângulo simples abaixo da COZINHA, com a mesma largura. Faces internas por varredura: oeste u=46..51 (fachada), leste u=157..162, norte v=498..503, sul v=624..629 (mesma parede de living-almoco). Nenhuma linha de mobiliário detectada dentro do cômodo.",
+      "finishes": {
+        "floor": "piso-ceramico-terracota",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "foto_cozinha_01 foi marcada a partir do ALMOÇO e mostra a cerâmica terracota no primeiro plano. As paredes do próprio ALMOÇO não aparecem; branco adotado por não haver evidência de azulejo aqui."
+      },
       "contour": [
         {
           "u": 52,
@@ -778,6 +814,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Retângulo simples no setor de serviço. Faces internas por varredura: norte v=31..35, oeste u=102..107, leste u=201..206 (mesma parede de dorm1-oeste-nicho), sul v=118..123.",
+      "finishes": {
+        "floor": "piso-ceramico-terracota",
+        "wall": "azulejo-bege",
+        "ceiling": "teto-branco",
+        "evidence": "Nenhuma das 11 fotografias mostra este ambiente. Acabamento proposto por analogia com o vizinho de mesma natureza; trocar quando houver evidência. Adotado o padrão do setor de serviço, que o cerca por três lados."
+      },
       "contour": [
         {
           "u": 108,
@@ -860,6 +902,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Faixa estreita e alta na fachada oeste, com um degrau de 7 px na altura de v=296: 50 px de largura acima, 57 px abaixo. Faces internas por varredura: norte v=31..35, oeste u=46..51, leste u=102..107 acima e u=109..114 abaixo, sul v=352..356 (mesma parede de cozinha-norte). Serve de circulação entre a entrada de serviço, o DORMIT. EMP., o BH de serviço e a COZINHA.",
+      "finishes": {
+        "floor": "piso-ceramico-terracota",
+        "wall": "azulejo-bege",
+        "ceiling": "teto-branco",
+        "evidence": "foto_corredor_cozinha_01 mostra a área de serviço ao fundo: mesma cerâmica terracota e azulejo bege, com uma sequência de janelas na fachada oeste."
+      },
       "contour": [
         {
           "u": 52,
@@ -1014,6 +1062,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Banheiro com banheira desenhada junto à divisória oeste. Faces internas por varredura: norte v=118..123, oeste u=102..107, leste u=222..227, sul v=203..207. A divisória oeste aparece em cinza claro, e não em preto, entre v=124 e v=201: pode ser envidraçamento, tijolo de vidro ou apenas traço mais fino. Modelada como parede cheia por ser a hipótese conservadora.",
+      "finishes": {
+        "floor": "piso-ceramico-bege",
+        "wall": "azulejo-bege",
+        "ceiling": "teto-branco",
+        "evidence": "foto_outro_banheiro_01: banheiro da suíte, mesmo padrão de azulejo bege."
+      },
       "contour": [
         {
           "u": 108,
@@ -1096,6 +1150,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Segundo banheiro, mesma largura do BH da suíte. Faces internas por varredura: norte v=203..207, oeste u=102..107, leste u=222..227, sul v=290..295. No canto sudoeste há dois retângulos escuros com diagonal (u=102..165, v=258..293) interpretados como armários embutidos e não modelados; se forem paredes, o contorno muda.",
+      "finishes": {
+        "floor": "piso-ceramico-bege",
+        "wall": "azulejo-bege",
+        "ceiling": "teto-branco",
+        "evidence": "foto_banheiro_01: cerâmica bege e azulejo bege estampado."
+      },
       "contour": [
         {
           "u": 108,
@@ -1178,6 +1238,12 @@
       "status": "proposto",
       "verification": "sem-cota",
       "evidence": "Menor banheiro do apartamento, no canto entre a ÁREA DE SERVIÇO e a COZINHA. Faces internas por varredura: norte v=290..295, oeste u=109..114, leste u=157..162, sul v=352..356. Nenhuma cota nem área impressa serve a este cômodo: o traçado não tem conferência independente e vale menos que o dos demais.",
+      "finishes": {
+        "floor": "piso-ceramico-bege",
+        "wall": "azulejo-bege",
+        "ceiling": "teto-branco",
+        "evidence": "Nenhuma das 11 fotografias mostra este ambiente. Acabamento proposto por analogia com o vizinho de mesma natureza; trocar quando houver evidência. Adotado o padrão dos outros banheiros."
+      },
       "contour": [
         {
           "u": 115,
@@ -1243,6 +1309,12 @@
       "status": "proposto",
       "verification": "sem-cota",
       "evidence": "Lavabo entre o BH social e o corredor. Faces internas por varredura: norte v=303..308, oeste u=157..162, leste u=222..227, sul v=365..370. As duas divisórias horizontais são contínuas de u=157 a u=227, sem interrupção. Sem cota nem área impressa: traçado sem conferência independente.",
+      "finishes": {
+        "floor": "piso-ceramico-bege",
+        "wall": "azulejo-bege",
+        "ceiling": "teto-branco",
+        "evidence": "foto_lavabo_01 mostra o lavabo; padrão de banheiro adotado."
+      },
       "contour": [
         {
           "u": 163,
@@ -1308,6 +1380,12 @@
       "status": "proposto",
       "verification": "sem-cota",
       "evidence": "Hall do elevador. Faces internas por varredura: norte v=498..503, oeste u=157..162, leste u=225..230 (mesma parede de living-hall), sul v=624..629 (mesma parede de almoco-sul e living-almoco). A caixa do elevador desenhada dentro dele é equipamento e não foi modelada. Sem cota nem área impressa. A altura interna, 120 px, é igual à do ALMOÇO, que fica ao lado e tem a cota 3,21; usar essa cota aqui seria reaproveitar a medida do vizinho, e por isso não foi registrada como conferência.",
+      "finishes": {
+        "floor": "piso-ceramico-terracota",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "Nenhuma das 11 fotografias mostra este ambiente. Acabamento proposto por analogia com o vizinho de mesma natureza; trocar quando houver evidência. Adotada a circulação vizinha."
+      },
       "contour": [
         {
           "u": 163,
@@ -1373,6 +1451,12 @@
       "status": "proposto",
       "verification": "cota-impressa",
       "evidence": "Terraço externo ao sul do LIVING. Diferente dos demais cômodos, não tem paredes escuras: o contorno vem de linhas finas em u=265..270, u=396..401 e v=822..826, interpretadas como guarda-corpo ou platibanda. Só o limite norte é parede de verdade, a fachada v=762..767 do LIVING. As duas conferências ficam entre 2 e 3 por cento, bem acima do resto do apartamento, porque a face exata dessas linhas finas é ambígua; por isso a confiança é média.",
+      "finishes": {
+        "floor": "piso-externo",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "Terraço não fotografado. Piso neutro para não afirmar acabamento; os fechamentos são gradil e o teto só existe se houver cobertura, que a planta não informa."
+      },
       "contour": [
         {
           "u": 271,
@@ -1455,6 +1539,12 @@
       "status": "proposto",
       "verification": "sem-cota",
       "evidence": "Faixa de circulação entre os dormitórios, com 41 px de largura, cerca de 1,09 m. Faces internas por varredura: norte v=206..211 (mesma parede de dorm1-sul), oeste u=222..227 (mesma parede de bhsocial-leste), leste u=270..274 (mesma parede de dorm2-oeste), sul v=325..330. Este trecho sul não é parede inteira: são dois tocos curtos, u=228..233 e u=259..268, com 25 px de vão entre eles, o mesmo desenho de um batente de porta. Sem cota nem área impressa; o corredor sequer tem nome na planta.",
+      "finishes": {
+        "floor": "piso-ceramico-terracota",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "foto_quarto_02 e foto_banheiro_01 foram marcadas neste corredor. Piso terracota como o restante da circulação vista em foto_cozinha_01."
+      },
       "contour": [
         {
           "u": 228,
@@ -1553,6 +1643,12 @@
       "status": "proposto",
       "verification": "sem-cota",
       "evidence": "Trecho em L que articula quase todo o apartamento: desce estreito do trecho norte e alarga para oeste abaixo de v=371. Faces internas por varredura: norte v=325..330, leste u=270..274, oeste u=157..162 (mesma parede de cozinha-leste), sul v=498..503. A aresta entre u=269 e u=230 em v=501 não tem parede nenhuma: é o mesmo corte aberto registrado no LIVING, e por isso não aparece na lista de paredes. Sem cota nem área impressa.",
+      "finishes": {
+        "floor": "piso-ceramico-terracota",
+        "wall": "parede-branca",
+        "ceiling": "teto-branco",
+        "evidence": "foto_cozinha_01 mostra a circulação em cerâmica terracota, paredes claras."
+      },
       "contour": [
         {
           "u": 228,
@@ -1690,5 +1786,57 @@
       ],
       "checks": []
     }
-  ]
+  ],
+  "materials": {
+    "parede-branca": {
+      "color": "#f0ede8",
+      "status": "proposto",
+      "evidence": "Branco de referência declarado, não medido: é o alvo usado para corrigir todas as outras amostras. As paredes do LIVING (foto_sala_03) e do dormitório (foto_quarto_01) são tinta branca lisa, lidas como #bbb6ae e #d0c9c2 sob a luz de cada foto."
+    },
+    "teto-branco": {
+      "color": "#f4f2ef",
+      "status": "proposto",
+      "evidence": "Teto branco liso em todas as fotos internas. Amostra em foto_sala_03, px(420,40)-(820,130): #aaa199 bruto, #dad2cc corrigido; adotado um pouco mais claro que a parede, como é usual. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+    },
+    "azulejo-bege": {
+      "color": "#d1bba0",
+      "status": "proposto",
+      "evidence": "Azulejo bege com estampa floral, do piso ao teto, em cozinha, área de serviço e banheiros. Amostra em foto_banheiro_01, px(480,700)-(820,860): #d1bba0, foto bem exposta (o assento branco lê #edecec, quase neutro, então quase não houve correção). Em foto_cozinha_01 a mesma família lê #e6d0b0 corrigido. A estampa não é reproduzida: só a cor de fundo. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+    },
+    "piso-parquete-escuro": {
+      "color": "#854c29",
+      "status": "proposto",
+      "evidence": "Parquete em espinha de peixe, escuro e avermelhado, no LIVING. Amostra em foto_sala_03, px(360,1080)-(760,1300): #683a1f bruto, #854c29 corrigido. O desenho em espinha não é reproduzido: só a cor. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+    },
+    "piso-parquete-mel": {
+      "color": "#d0824f",
+      "status": "proposto",
+      "evidence": "Parquete em espinha cor de mel, claramente mais claro que o do LIVING. Amostra em foto_quarto_01, px(260,1080)-(700,1300): #b46e42 bruto, #d0824f corrigido. foto_quarto_03 mostra o mesmo piso no ESCRITÓRIO. O desenho em espinha não é reproduzido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+    },
+    "piso-ceramico-terracota": {
+      "color": "#c98252",
+      "status": "proposto",
+      "evidence": "Cerâmica terracota de junta larga na cozinha, no corredor de serviço e na área de serviço. Amostra em foto_cozinha_01, px(380,1180)-(720,1360): #ba7e54 bruto, #c98252 corrigido. foto_corredor_cozinha_01 mostra o mesmo piso seguindo até a área de serviço. As juntas não são reproduzidas. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+    },
+    "piso-ceramico-bege": {
+      "color": "#d7bda6",
+      "status": "proposto",
+      "evidence": "Cerâmica bege clara nos banheiros. Amostra em foto_banheiro_01, px(480,1180)-(820,1340): #d7bda6, praticamente sem correção. As juntas não são reproduzidas. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+    },
+    "piso-externo": {
+      "color": "#b9b3a8",
+      "status": "proposto",
+      "evidence": "Terraço: nenhuma das 11 fotografias o mostra. Cinza neutro escolhido para não afirmar um acabamento que ninguém viu. Trocar quando houver foto ou informação do usuário."
+    },
+    "esquadria-aluminio": {
+      "color": "#d8d9d8",
+      "status": "proposto",
+      "evidence": "Esquadrias de alumínio cinza-claro, visíveis em foto_quarto_01, foto_quarto_03, foto_sala_03 e foto_banheiro_01. Amostra do montante em foto_quarto_01, px(762,392)-(792,660): #bbb8b5 bruto, #d8d9d8 corrigido. Cor mediana de uma região de pixels da fotografia original, corrigida pelo branco da própria foto (a superfície que sabemos ser tinta branca vira #f0ede8). A mediana ignora reflexo de verniz e brilho isolado. É cor de acabamento proposta, não medição de tinta: nenhuma amostra física foi comparada."
+    },
+    "vidro": {
+      "color": "#cfe0e6",
+      "status": "proposto",
+      "evidence": "Vidro incolor, representado por um plano translúcido de cor fria. Não é amostra: é convenção de desenho, porque a cor lida numa foto de vidro é a cor do que está atrás dele."
+    }
+  }
 }

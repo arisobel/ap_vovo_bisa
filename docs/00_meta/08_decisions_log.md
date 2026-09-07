@@ -38,6 +38,16 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D022 - As cotas na cena medem o traçado, não repetem a planta (07/09/2026)
+
+O usuário pediu um checkbox com a distância e o tamanho das paredes, com setas nas extremidades e o número no meio.
+
+Decisao: a cota mede a **parede traçada**, calculada da geometria, e não repete o número impresso na planta. São coisas diferentes e confundi-las apagaria a conferência que o projeto inteiro se baseia. No escritório, por exemplo, a cota da cena mostra 4,04 m onde a planta imprime 4,03 - um centímetro de diferença, que é a qualidade do traçado. E mostra 4,23 m na parede onde a planta imprime 3,67, porque a impressa é o vão livre entre dois embutidos de 0,27 m, não a parede.
+
+Cada cota é uma textura só, com linha, setas e número, deitada no piso e recuada 32 cm para dentro do cômodo. Um plano por parede sai mais barato que montar cada traço em geometria. Paredes com menos de 60 cm não recebem cota: o desenho não caberia. Saíram 71 cotas.
+
+O checkbox nasce desligado, ao contrário do de nomes no chão, que passou a nascer ligado a pedido do usuário.
+
 ## D021 - A tela cheia leva o painel, não a caixa da cena (07/09/2026)
 
 Primeira versão punha em tela cheia apenas o elemento da cena. Dois defeitos apareceram no uso: em tela cheia a barra de botões ficava de fora, então não havia como entrar no passeio; e durante o passeio o ponteiro está capturado, então nenhum botão é clicável de qualquer forma.

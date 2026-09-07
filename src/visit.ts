@@ -34,7 +34,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
       </article>
       <article class="panel visual-panel">
         <div class="panel-heading"><div><span class="step">02</span><h2>O apartamento</h2></div><span id="visit-badge" class="badge">Modelo em 3D</span></div>
-        <div class="plan-tools" id="visit-tools"><span id="visit-info">Reconstruído a partir da planta e das fotografias.</span><div><button id="visit-walk" class="primary">Andar por dentro</button><button id="visit-frame">Ver tudo</button><button id="visit-full">Tela cheia</button><button id="visit-photo" hidden>Ver a fotografia</button><button id="visit-furniture" aria-pressed="true">Com mobília</button><label class="toggle" title="Áreas medidas no traçado. A planta imprime valores menores para os dormitórios, porque não conta os armários embutidos."><input type="checkbox" id="visit-labels"> Nomes no chão</label></div></div>
+        <div class="plan-tools" id="visit-tools"><span id="visit-info">Reconstruído a partir da planta e das fotografias. Clique no modelo para entrar no passeio.</span><div><button id="visit-walk" class="primary">Andar por dentro</button><button id="visit-frame">Ver tudo</button><button id="visit-full">Tela cheia</button><button id="visit-photo" hidden>Ver a fotografia</button><button id="visit-furniture" aria-pressed="true">Com mobília</button><label class="toggle" title="Áreas medidas no traçado. A planta imprime valores menores para os dormitórios, porque não conta os armários embutidos."><input type="checkbox" id="visit-labels" checked> Nomes no chão</label><label class="toggle" title="Comprimento de cada parede do traçado, com setas nas extremidades. Não são as cotas impressas na planta."><input type="checkbox" id="visit-dims"> Medidas</label></div></div>
         <div id="preview"></div>
         <div class="photo-stage" id="visit-stage" hidden><img id="visit-large" alt=""></div>
         <p class="visual-footer"><span class="dot"></span> Uma reconstrução aproximada, guiada por evidências.</p>
@@ -180,12 +180,12 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     andando = ativo;
     el('visit-walk').textContent = rotuloPasseio(ativo);
     el('visit-walk').classList.toggle('primary', !ativo);
-    for (const id of ['visit-frame', 'visit-photo', 'visit-furniture', 'visit-labels']) el<HTMLButtonElement>(id).disabled = ativo;
+    for (const id of ['visit-frame', 'visit-photo', 'visit-furniture', 'visit-labels', 'visit-dims']) el<HTMLButtonElement>(id).disabled = ativo;
     el('visit-info').textContent = ativo
       ? 'W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, F para tela cheia, Esc para sair. O leque na planta acompanha sua vista.'
       : selecionada
         ? `Você está no ponto de ${title(selecionada)}, olhando na mesma direção da fotografia.`
-        : 'Reconstruído a partir da planta e das fotografias.';
+        : 'Reconstruído a partir da planta e das fotografias. Clique no modelo para entrar no passeio.';
   });
   el('visit-walk').onclick = () => {
     if (andando) { scene?.exitWalk(); return; }
@@ -204,6 +204,17 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
   el<HTMLInputElement>('visit-labels').onchange = event => {
     scene?.setLabels((event.target as HTMLInputElement).checked);
   };
+  el<HTMLInputElement>('visit-dims').onchange = event => {
+    scene?.setDimensions((event.target as HTMLInputElement).checked);
+  };
+  // Clicar no modelo entra no passeio, do ponto da fotografia escolhida quando há uma.
+  scene.setClickToWalk(() => {
+    if (mostrandoFoto) return;
+    const pose = selecionada?.pose && project.calibration
+      ? poseToWorld(selecionada.pose, project.calibration.transform)
+      : null;
+    scene?.enterWalk(pose);
+  });
   el('visit-furniture').onclick = () => {
     const button = el('visit-furniture');
     const com = button.getAttribute('aria-pressed') !== 'true';

@@ -1,5 +1,23 @@
 # Progresso
 
+## 07/09/2026 — Cotas na cena, clique para passear e botão do mouse como avanço
+
+Quatro pedidos do usuário, todos sobre reduzir atrito no passeio.
+
+**Nomes no chão passou a nascer ligado.** Era o padrão errado: o recurso serve à primeira impressão, e estava escondido atrás de um clique.
+
+**Botão do mouse anda para a frente**, junto com W. Em tela cheia é o gesto natural, e o teclado deixa de ser obrigatório para avançar.
+
+**Clicar no modelo entra no passeio.** Arrastar continua girando a órbita — a diferença é deslocamento e tempo, não o botão: menos de 5 px e menos de 400 ms conta como clique. Havendo fotografia escolhida, entra pelo ponto dela.
+
+**Cotas das paredes**, num checkbox à parte. E aqui houve uma decisão que vale registrar (D022): a cota mede a **parede traçada**, e não repete o número impresso na planta. No escritório a cena mostra 4,04 m onde a planta imprime 4,03 — um centímetro, que é a qualidade do traçado. E mostra 4,23 m na parede onde a planta imprime 3,67, porque a impressa é o vão livre entre dois embutidos de 0,27 m, não a parede inteira. Repetir o número impresso apagaria justamente essa distinção.
+
+Cada cota é uma textura única com linha, setas e número, deitada no piso e recuada 32 cm para dentro. Saíram 71 cotas; paredes com menos de 60 cm ficam sem, porque o desenho não caberia.
+
+Cinco testes cuidam das cotas: comprimento igual ao da parede, recuo para dentro e não para fora, alinhamento com a direção da parede, ausência nas paredes curtas, e a soma das cotas de um cômodo igual ao perímetro das suas paredes.
+
+139 testes passam; TypeScript e build limpos.
+
 ## 07/09/2026 — Correção da tela cheia, e a seta do letreiro de porta
 
 Dois retornos do usuário depois de usar. O primeiro, cosmético: a seta lateral do letreiro de porta sugeria uma direção que a porta não tem; virou seta para cima, no sentido de seguir por aqui. Constante compartilhada entre o código e o teste, para não divergirem.

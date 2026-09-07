@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, doorwayLabels, SETA_DESTINO, fixtureBlock, FOV_MAX, FOV_MIN, FOV_PASSEIO, headingFromYaw, horizontalFovDeg, innerPoint, labelFacing, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks, wallLabels, zoomFov } from '../src/scene/preview';
+import { barriersFrom, doorwayLabels, SETA_DESTINO, fixtureBlock, FOV_MAX, FOV_MIN, FOV_PASSEIO, headingFromYaw, horizontalFovDeg, innerPoint, labelFacing, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks, wallDimensions, wallLabels, zoomFov } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
 import { POSE_LIMITS } from '../src/data/validation';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
@@ -461,5 +461,57 @@ describe('letreiro de porta aponta para frente', () => {
     const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
     const rotulos = doorwayLabels(deriveApartment(initialApartment(), transform));
     expect(rotulos.every(l => l.text.startsWith(`${SETA_DESTINO} `))).toBe(true);
+  });
+});
+
+describe('cotas das paredes', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+  const salas = deriveApartment(initialApartment(), transform);
+
+  it('mede exatamente o comprimento da parede traçada', () => {
+    for (const sala of salas) {
+      for (const cota of wallDimensions(sala)) {
+        const wall = sala.walls.find(w => w.id === cota.wallId)!;
+        expect(cota.length, cota.wallId).toBeCloseTo(wall.length, 9);
+        expect(cota.text).toMatch(/^\d+,\d{2} m$/);
+      }
+    }
+  });
+
+  it('recua a cota para dentro do cômodo, nunca para fora', () => {
+    for (const sala of salas) {
+      for (const cota of wallDimensions(sala)) {
+        const wall = sala.walls.find(w => w.id === cota.wallId)!;
+        const meio = { x: (wall.start.x + wall.end.x) / 2, z: (wall.start.z + wall.end.z) / 2 };
+        const alvo = { x: meio.x + (cota.x - meio.x) * 3, z: meio.z + (cota.z - meio.z) * 3 };
+        // Três vezes o recuo ainda tem de cair dentro do cômodo em paredes longas.
+        if (wall.length > 2.2) expect(dentroDoContorno(sala.contour, alvo), `${sala.id}/${cota.wallId}`).toBe(true);
+      }
+    }
+  });
+
+  it('alinha a cota com a direção da parede', () => {
+    for (const sala of salas) {
+      for (const cota of wallDimensions(sala)) {
+        const wall = sala.walls.find(w => w.id === cota.wallId)!;
+        const dx = (wall.end.x - wall.start.x) / wall.length;
+        const dz = (wall.end.z - wall.start.z) / wall.length;
+        expect(Math.cos(cota.rotationY), cota.wallId).toBeCloseTo(dx, 9);
+        expect(-Math.sin(cota.rotationY), cota.wallId).toBeCloseTo(dz, 9);
+      }
+    }
+  });
+
+  it('ignora paredes curtas demais para caber a cota', () => {
+    const curtas = salas.flatMap(s => s.walls).filter(w => w.length < .6);
+    const cotadas = new Set(salas.flatMap(s => wallDimensions(s)).map(c => c.wallId));
+    for (const w of curtas) expect(cotadas.has(w.id), w.id).toBe(false);
+  });
+
+  it('soma das cotas de um cômodo bate com o perímetro das suas paredes', () => {
+    const escritorio = salas.find(s => s.id === 'escritorio')!;
+    const soma = wallDimensions(escritorio).reduce((t, c) => t + c.length, 0);
+    const perimetro = escritorio.walls.reduce((t, w) => t + w.length, 0);
+    expect(soma).toBeCloseTo(perimetro, 9);
   });
 });

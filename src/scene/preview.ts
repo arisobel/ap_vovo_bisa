@@ -25,6 +25,8 @@ export type PreviewHandle = {
   setPalette(mode: PaletteMode): void;
   setFurniture(visible: boolean): void;
   setLabels(visible: boolean): void;
+  setDimensions(visible: boolean): void;
+  setClickToWalk(handler: (() => void) | null): void;
   toggleFullscreen(): void;
   isFullscreen(): boolean;
   setWalkListener(listener: (state: WalkState | null) => void): void;
@@ -381,6 +383,32 @@ export function doorwayLabels(rooms: SceneRoom[]): SurfaceLabel[] {
   return rotulos;
 }
 
+export type WallDimension = { x: number; z: number; rotationY: number; length: number; text: string; wallId: string };
+
+// Cota de cada parede, deitada no piso e recuada para dentro do cômodo. O comprimento é o
+// da parede traçada; a cota impressa da planta continua sendo outra coisa, conferida em checks.
+export function wallDimensions(room: SceneRoom, recuo = .32): WallDimension[] {
+  const cotas: WallDimension[] = [];
+  for (const wall of room.walls) {
+    const comprimento = Math.hypot(wall.end.x - wall.start.x, wall.end.z - wall.start.z);
+    if (comprimento < .6) continue;
+    const dx = (wall.end.x - wall.start.x) / comprimento;
+    const dz = (wall.end.z - wall.start.z) / comprimento;
+    // A parede cresce para fora; a cota vai para o lado de dentro.
+    const dentroX = -dz, dentroZ = dx;
+    const meioX = (wall.start.x + wall.end.x) / 2 + dentroX * recuo;
+    const meioZ = (wall.start.z + wall.end.z) / 2 + dentroZ * recuo;
+    cotas.push({
+      x: meioX, z: meioZ,
+      rotationY: Math.atan2(-dz, dx),
+      length: comprimento,
+      text: `${comprimento.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} m`,
+      wallId: wall.id,
+    });
+  }
+  return cotas;
+}
+
 export function startingPoint(rooms: SceneRoom[]): Ponto | null {
   let melhorSala: SceneRoom | null = null, maiorArea = 0;
   for (const room of rooms) {
@@ -401,7 +429,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   try { renderer = new WebGLRenderer({ antialias: true, alpha: false }); }
   catch {
     report('WebGL indisponível. A planta, a calibração e as fotos continuam disponíveis.');
-    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setLabels() {}, toggleFullscreen() {}, isFullscreen() { return false; }, setWalkListener() {}, dispose() {} };
+    return { show() {}, setWallsVisible() {}, lookFromTop() {}, frame() {}, enterWalk() {}, exitWalk() {}, viewFromPose() {}, setPalette() {}, setFurniture() {}, setLabels() {}, setDimensions() {}, setClickToWalk() {}, toggleFullscreen() {}, isFullscreen() { return false; }, setWalkListener() {}, dispose() {} };
   }
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
   host.prepend(renderer.domElement);
@@ -422,8 +450,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const moveis = new Group();
   const rotulos = new Group();
   const letreiros = new Group();
+  const cotasGrupo = new Group();
   const paredes = new Group();
-  scene.add(pisos, paredes, moveis, rotulos, letreiros);
+  scene.add(pisos, paredes, moveis, rotulos, letreiros, cotasGrupo);
 
   const camera = new PerspectiveCamera(42, 1, 0.1, 400);
   camera.position.set(11, 12, 13);
@@ -451,7 +480,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const materialVidro = new MeshLambertMaterial({ color: VIDRO, transparent: true, opacity: .34 });
   let paleta: PaletteMode = 'materiais';
   let comMobilia = true;
-  let comRotulos = false;
+  let comRotulos = true;
+  let comCotas = false;
   let ultimasSalas: SceneRoom[] | null = null;
 
   let limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 };
@@ -462,6 +492,20 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   let alturaOlhos = ALTURA_OLHOS;
   const alvoTelaCheia = fullscreenTarget ?? host;
   let trocaDeTela = 0;
+  let aoClicarNaCena: (() => void) | null = null;
+  let apertou: { x: number; y: number; t: number } | null = null;
+
+  // Clique curto na cena parada entra no passeio. Arrastar continua girando a órbita:
+  // a diferença é deslocamento e tempo, não o botão.
+  const marcarAperto = (event: MouseEvent) => { apertou = andando ? null : { x: event.clientX, y: event.clientY, t: performance.now() }; };
+  const talvezPassear = (event: MouseEvent) => {
+    const inicio = apertou;
+    apertou = null;
+    if (!inicio || andando || !aoClicarNaCena) return;
+    if (Math.hypot(event.clientX - inicio.x, event.clientY - inicio.y) > 5) return;
+    if (performance.now() - inicio.t > 400) return;
+    aoClicarNaCena();
+  };
 
   function alternarTelaCheia() {
     trocaDeTela = performance.now();
@@ -493,6 +537,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     avisarPasseio(estado);
   }
   const teclas = new Set<string>();
+  let avancoDoMouse = false;
   let yaw = 0, pitch = 0, quadro = 0, instante = 0;
 
   function limpar(grupo: Group) {
@@ -533,6 +578,41 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
       new PlaneGeometry(largura, altura),
       new MeshBasicMaterial({ map: new CanvasTexture(canvas), transparent: true, depthWrite: false }),
     );
+  }
+
+  // A cota é desenhada inteira numa textura: linha, setas nas pontas e o número no meio.
+  // Um plano por parede, deitado no piso — mais barato que montar cada traço em geometria.
+  function montarCota(cota: WallDimension) {
+    const canvas = document.createElement('canvas');
+    canvas.width = 512; canvas.height = 96;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+    const y = canvas.height * .62, m = 14;
+    ctx.strokeStyle = '#7c5a3f'; ctx.fillStyle = '#7c5a3f'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(m, y); ctx.lineTo(canvas.width - m, y); ctx.stroke();
+    // Traços de extremidade e setas apontando para elas.
+    for (const [x, sentido] of [[m, 1], [canvas.width - m, -1]] as [number, number][]) {
+      ctx.beginPath(); ctx.moveTo(x, y - 18); ctx.lineTo(x, y + 18); ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(x, y); ctx.lineTo(x + sentido * 22, y - 9); ctx.lineTo(x + sentido * 22, y + 9);
+      ctx.closePath(); ctx.fill();
+    }
+    ctx.font = '600 40px "Segoe UI", system-ui, sans-serif';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+    const largura = ctx.measureText(cota.text).width + 18;
+    ctx.fillStyle = '#f7f4ecee';
+    ctx.fillRect(canvas.width / 2 - largura / 2, y - 30, largura, 36);
+    ctx.fillStyle = '#5d4028';
+    ctx.fillText(cota.text, canvas.width / 2, y - 4);
+    const altura = cota.length * (canvas.height / canvas.width);
+    const mesh = new Mesh(
+      new PlaneGeometry(cota.length, altura),
+      new MeshBasicMaterial({ map: new CanvasTexture(canvas), transparent: true, depthWrite: false }),
+    );
+    mesh.rotation.order = 'YXZ';
+    mesh.rotation.set(-Math.PI / 2, cota.rotationY, 0);
+    mesh.position.set(cota.x, .015, cota.z);
+    cotasGrupo.add(mesh);
   }
 
   // Nome do cômodo no alto da parede e destino escrito sobre cada porta: é o que orienta
@@ -601,6 +681,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     limpar(moveis);
     limpar(rotulos);
     limpar(letreiros);
+    limpar(cotasGrupo);
     grade.visible = !rooms || rooms.length === 0;
     barreiras = []; partida = null;
     if (!rooms || rooms.length === 0) { limites = { minX: -8, maxX: 8, minZ: -8, maxZ: 8 }; frame(); return; }
@@ -608,6 +689,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     for (const room of rooms) {
       montarPiso(room);
       if (comRotulos) montarRotulo(room);
+      if (comCotas) for (const cota of wallDimensions(room)) montarCota(cota);
       for (const label of wallLabels(room)) montarLetreiro(label);
       for (const wall of room.walls) montarParede(wall, room);
       if (comMobilia) for (const fixture of room.fixtures) {
@@ -677,6 +759,10 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     pitch = Math.max(-PITCH_LIMITE, Math.min(PITCH_LIMITE, pitch - dy * .0026));
   }
   const aoMover = (event: MouseEvent) => { if (andando) olhar(event.movementX, event.movementY); };
+  // Segurar o botão do mouse anda para a frente: em tela cheia, é o gesto natural, e o
+  // teclado deixa de ser obrigatório para avançar.
+  const aoApertarMouse = (event: MouseEvent) => { if (andando && event.button === 0) { avancoDoMouse = true; event.preventDefault(); } };
+  const aoSoltarMouse = (event: MouseEvent) => { if (event.button === 0) avancoDoMouse = false; };
   const aoRolar = (event: WheelEvent) => {
     if (!andando) return;
     event.preventDefault();
@@ -706,7 +792,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     const dt = Math.min(.05, (agora - instante) / 1000 || 0);
     instante = agora;
     let frente = 0, lado = 0;
-    if (teclas.has('w') || teclas.has('arrowup')) frente += 1;
+    if (teclas.has('w') || teclas.has('arrowup') || avancoDoMouse) frente += 1;
     if (teclas.has('s') || teclas.has('arrowdown')) frente -= 1;
     if (teclas.has('d') || teclas.has('arrowright')) lado += 1;
     if (teclas.has('a') || teclas.has('arrowleft')) lado -= 1;
@@ -751,6 +837,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     document.addEventListener('mousemove', aoMover);
     document.addEventListener('pointerlockchange', aoTrocarTrava);
     tela.addEventListener('wheel', aoRolar, { passive: false });
+    tela.addEventListener('mousedown', aoApertarMouse);
+    document.addEventListener('mouseup', aoSoltarMouse);
     document.addEventListener('fullscreenchange', aoTrocarTelaCheia);
     letreiros.visible = true;
     tela.focus();
@@ -770,6 +858,9 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     document.removeEventListener('mousemove', aoMover);
     document.removeEventListener('pointerlockchange', aoTrocarTrava);
     tela.removeEventListener('wheel', aoRolar);
+    tela.removeEventListener('mousedown', aoApertarMouse);
+    document.removeEventListener('mouseup', aoSoltarMouse);
+    avancoDoMouse = false;
     document.removeEventListener('fullscreenchange', aoTrocarTelaCheia);
     letreiros.visible = false;
     camera.fov = FOV_PASSEIO;
@@ -803,8 +894,19 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   return {
     show, setWallsVisible, lookFromTop, frame, enterWalk, exitWalk, viewFromPose,
     setWalkListener(listener) { avisarPasseio = listener; },
+    setClickToWalk(handler) {
+      aoClicarNaCena = handler;
+      tela.removeEventListener('mousedown', marcarAperto);
+      tela.removeEventListener('mouseup', talvezPassear);
+      if (handler) { tela.addEventListener('mousedown', marcarAperto); tela.addEventListener('mouseup', talvezPassear); }
+    },
     toggleFullscreen() { alternarTelaCheia(); },
     isFullscreen() { return document.fullscreenElement === alvoTelaCheia; },
+    setDimensions(visible) {
+      if (visible === comCotas) return;
+      comCotas = visible;
+      if (ultimasSalas) show(ultimasSalas);
+    },
     setLabels(visible) {
       if (visible === comRotulos) return;
       comRotulos = visible;

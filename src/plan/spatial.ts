@@ -38,3 +38,15 @@ export function headingDirection(degrees: number) {
 export function azimuthBetween(from: Point, to: Point): number {
   return (Math.atan2(to.u - from.u, from.v - to.v) * 180 / Math.PI + 360) % 360;
 }
+
+// Setor do campo de visão de uma fotografia, em pixels da planta: o ponto da câmera seguido
+// do arco entre as duas bordas do campo horizontal. Serve para desenhar o que a foto alcança.
+export function fovWedge(from: Point, headingDeg: number, horizontalFovDeg: number, radius: number, steps = 14): Point[] {
+  const meio = horizontalFovDeg / 2;
+  const pontos: Point[] = [{ ...from }];
+  for (let i = 0; i <= steps; i++) {
+    const rad = (headingDeg - meio + (horizontalFovDeg * i) / steps) * Math.PI / 180;
+    pontos.push({ u: from.u + Math.sin(rad) * radius, v: from.v - Math.cos(rad) * radius });
+  }
+  return pontos;
+}

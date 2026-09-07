@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { azimuthBetween, calibrate, compareMeasurement, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
+import { azimuthBetween, calibrate, compareMeasurement, fovWedge, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
 import { MIN_HEADING_PIXELS, routePlanClick } from '../src/plan/planmode';
 
 describe('regras espaciais', () => {
@@ -72,6 +72,30 @@ describe('modo da planta', () => {
       const grau = azimuthBetween(A, { u: A.u + u, v: A.v + v });
       expect(grau).toBeGreaterThanOrEqual(0);
       expect(grau).toBeLessThan(360);
+    }
+  });
+});
+
+describe('setor de visão', () => {
+  const origem = { u: 200, v: 400 };
+
+  it('sai do ponto da câmera e mantém todo o arco no mesmo raio', () => {
+    const setor = fovWedge(origem, 90, 60, 50);
+    expect(setor[0]).toEqual(origem);
+    for (const p of setor.slice(1)) expect(Math.hypot(p.u - origem.u, p.v - origem.v)).toBeCloseTo(50, 9);
+  });
+
+  it('centra o setor no azimute e abre o campo declarado', () => {
+    const setor = fovWedge(origem, 90, 60, 50, 2).slice(1);
+    expect(azimuthBetween(origem, setor[1])).toBeCloseTo(90, 9);
+    expect(azimuthBetween(origem, setor[0])).toBeCloseTo(60, 9);
+    expect(azimuthBetween(origem, setor[2])).toBeCloseTo(120, 9);
+  });
+
+  it('atravessa o norte sem furo no arco', () => {
+    const setor = fovWedge(origem, 0, 80, 40, 8).slice(1);
+    for (let i = 1; i < setor.length; i++) {
+      expect(Math.hypot(setor[i].u - setor[i - 1].u, setor[i].v - setor[i - 1].v)).toBeLessThan(12);
     }
   });
 });

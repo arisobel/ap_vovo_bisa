@@ -38,6 +38,18 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D018 - Visita e editor são telas separadas, e só a visita é publicada (07/09/2026)
+
+O usuário pediu uma tela para o público, sem controles de gravação, e deploy no CapRover. A proibição de publicar vinha do escopo da F0 e foi levantada por ele.
+
+Decisao: duas entradas do Vite. `index.html` é o editor, que continua local. `visita.html` é a visita, que só lê: nada de calibrar, marcar pose, importar ou exportar, e nada de rascunho no armazenamento local - a visita usa os arquivos versionados, então todo visitante vê exatamente o que está no repositório.
+
+A imagem publicada roda `build:visita`, um build cujo único input é `visita.html`. O editor não entra na imagem nem como HTML nem como bundle. Não é esconder uma tela atrás de uma URL: ela simplesmente não é construída.
+
+A imagem é nginx servindo arquivos estáticos. Continua sem backend, sem banco e sem autenticação, o que preserva o resto da restrição original.
+
+Os pacotes de deploy vão para `dep/`, não para `dist/`, que é a saída do Vite. `dep/` e `.env` estão no .gitignore, e o pacote é montado por lista de inclusão, não por exclusão: entra o que o Dockerfile copia, e `docs/` fica de fora por ser 21 MB de originais que a imagem não usa.
+
 ## D017 - Duas versões, vazia e mobiliada, com a mobília em pixels da planta (07/09/2026)
 
 O PRD, seção 9, item 6, pedia confirmar a preferência visual: vazio, mobiliário existente ou ambos. O usuário respondeu **ambos** em 07/09/2026, ao ver a cena com acabamentos.

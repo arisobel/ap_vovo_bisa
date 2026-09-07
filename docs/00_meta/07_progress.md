@@ -1,5 +1,21 @@
 # Progresso
 
+## 07/09/2026 — Tela de visita e publicação estática no CapRover
+
+O usuário pediu uma tela para o público, sem controles de gravação, e deploy no CapRover. A proibição de publicar vinha do escopo da F0 e foi levantada por ele; AGENTS.md e AGENT_SKILL_PROJECT.md registram a mudança e o que continua valendo — sem backend, banco, autenticação, React ou IA.
+
+São duas entradas do Vite (D018). `index.html` segue sendo o editor, local. `visita.html` é a visita: só leitura, sem calibração, sem marcação de pose, sem importar ou exportar, e sem rascunho no armazenamento local — ela usa os arquivos versionados, de modo que todo visitante vê o mesmo.
+
+O pedido específico era que o ponto de vista da fotografia ficasse chamativo. Clicar numa foto desenha, na planta: o **leque do campo de visão**, calculado com `horizontalFov` a partir da proporção da própria fotografia, uma seta na direção do olhar e um anel que pulsa. As demais fotos ficam como pontos discretos, para não competirem. Clicar perto de uma marca na planta também escolhe a foto. A cena 3D vai ao mesmo ponto, e um botão alterna entre a fotografia e o modelo visto dali.
+
+`fovWedge` entrou em `spatial.ts` como função pura, com testes: o arco sai do ponto da câmera, todos os pontos ficam no mesmo raio, o setor é centrado no azimute com a abertura declarada, e a passagem pelo norte não abre furo.
+
+Publicação: `Dockerfile` em duas etapas, node constrói e nginx serve. A imagem roda `build:visita`, cujo único input é `visita.html` — o editor não entra na imagem nem como HTML nem como bundle; não é uma tela escondida atrás de uma URL, ela não é construída. `build.ps1` empacota em `dep/`, e não em `dist/`, que é a saída do Vite; o pacote é montado por lista de inclusão, e `docs/` fica de fora por ser 21 MB de originais que a imagem não usa. `deploy-caprover.ps1` roda testes e typecheck antes de publicar, e lê do `.env` somente as três chaves CAPROVER_*.
+
+Conferido: o pacote sai com 38 arquivos, 20 MB, e a listagem do tar não traz `.env`, `node_modules`, `dist`, `dep`, `docs` nem `.git`. 117 testes passam; TypeScript e build limpos.
+
+Não conferido: **a imagem nunca foi construída**, porque não há Docker nesta sessão, e nenhum deploy foi disparado. A tela de visita também não foi aberta em navegador.
+
 ## 07/09/2026 — F4, segunda parte: as duas versões, vazia e mobiliada
 
 O usuário respondeu a pendência 6 do PRD ao ver a cena com acabamentos: quer **as duas versões**, vazia e mobiliada, alternáveis. É a primeira vez que essa preferência sai do default proposto e vira decisão registrada (D017).

@@ -9,6 +9,7 @@ Requisitos e critérios completos: `PRD.md`, seções 4 e 8.
 | F2 | Editor de fotografias e comparação | 11 registros revisados ou pendentes explicitamente |
 | F3 | Passeio, colisões e planta sincronizada | Percurso testado sem atravessar barreiras |
 | F4 | Materiais e elementos selecionados | Aparência melhor sem regressão de navegação |
+| F5 | Visita pública e publicação | Tela sem controles de edição, imagem estática publicável |
 
 Fase atual: F0 a F3 concluídas. A F4 entregou sua primeira parte em 07/09/2026: acabamentos e esquadrias.
 

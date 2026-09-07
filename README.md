@@ -37,6 +37,28 @@ O build estático fica em `dist/`. Use o servidor de preview para abri-lo (norma
 
 O rascunho é salvo no armazenamento local do navegador, sujeito a disponibilidade e limpeza pelo próprio navegador. Ele tem precedência sobre a base do repositório ao recarregar. Após trocar `src/data/project.json`, importe esse arquivo também na interface se já houver um rascunho. JSON exportado na F0 continua sendo aceito na importação e é migrado para a versão 2, com todas as fotos pendentes.
 
+## Duas telas
+
+`index.html` é o **editor**: calibração, marcação de poses, importação e exportação. É a ferramenta de trabalho e continua local.
+
+`visita.html` é a **visita**: só leitura. Clicar numa fotografia acende o ponto de onde ela foi tirada — um leque mostrando o alcance da câmera, uma seta na direção do olhar e um anel que pulsa — e leva a câmera 3D ao mesmo ponto. Dá para alternar entre a fotografia e o modelo visto dali, andar por dentro e ver o apartamento com ou sem mobília. Não há nada que grave parâmetro, e a visita não lê o rascunho do navegador: ela usa os arquivos versionados, então todo visitante vê o mesmo.
+
+Em desenvolvimento, a visita fica em `/visita.html`. Na imagem publicada, ela é a página inicial.
+
+## Publicar no CapRover
+
+A imagem é nginx servindo arquivos estáticos: sem backend, sem banco, sem autenticação. Só a visita é construída — o editor não entra na imagem.
+
+```powershell
+Copy-Item .env.example .env      # e preencha CAPROVER_URL, CAPROVER_APP e CAPROVER_APP_TOKEN
+npm install -g caprover          # uma vez
+.\deploy-caprover.ps1
+```
+
+O script roda `npm test` e `npm run typecheck`, monta o pacote com `build.ps1` e publica. `build.ps1` sozinho apenas empacota, em `dep/`, guardando os cinco pacotes mais recentes. `.env` e `dep/` são ignorados pelo Git e nunca entram no pacote, assim como `docs/`, `dist/` e `node_modules/`.
+
+Para conferir o pacote antes de publicar: `tar -tzf dep\<arquivo>.tar.gz`.
+
 ## Arquivos
 
 - `docs/10_product/PRD.md`: cópia integral do PRD fornecido.
@@ -49,11 +71,14 @@ O rascunho é salvo no armazenamento local do navegador, sujeito a disponibilida
 - `src/plan/spatial.ts`: escala, transformação, inversa, conferência e azimutes.
 - `src/scene/preview.ts`: cena Three.js, paredes com vãos recortados, passeio em primeira pessoa e colisão.
 - `docs/00_meta/07_progress.md`: evidências da entrega e próximo passo.
+- `src/visit.ts`: a tela de visita, somente leitura.
+- `Dockerfile`, `nginx.conf`, `captain-definition`: imagem estática publicável.
+- `build.ps1`, `deploy-caprover.ps1`, `.env.example`: empacotamento em `dep/` e publicação.
 - `docs/40_delivery/F0_BLUEPRINT.md`: escopo e roteiro manual.
 
 ## Validação e limitações
 
-114 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera nos dois sentidos, a posição do passeio de volta na planta o roteamento dos cliques entre medir cota e marcar foto, os acabamentos e esquadrias, e a mobília com sua colisão condicional.
+117 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera nos dois sentidos, a posição do passeio de volta na planta o roteamento dos cliques entre medir cota e marcar foto, os acabamentos e esquadrias, a mobília com sua colisão condicional, e o setor de visão desenhado na tela de visita.
 
 Nada foi medido no apartamento, com uma exceção: o pé-direito de 2,70 m foi confirmado pelo usuário. Os três fechamentos do terraço sobem 1,10 m por serem gradil, tipo de fechamento confirmado pelo usuário; a altura em si é a usual de guarda-corpo e continua estimada, e o desenho é um parapeito maciço, sem os vazios. Espessura de parede, peitoril e altura de janela continuam estimativas globais.
 

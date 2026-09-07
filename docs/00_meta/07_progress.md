@@ -1,5 +1,17 @@
 # Progresso
 
+## 06/09/2026 — Correção da F2: a planta passa a ter um modo por vez
+
+No primeiro uso real da marcação, os cliques da pose e os pontos A e B da cota se misturaram na mesma superfície: o marcador verde da câmera e o marcador laranja da cota apareciam juntos, e um clique depois da marcação começava uma cota nova sem aviso, com a ajuda ainda dizendo "Ponto A marcado".
+
+O roteamento do clique virou função pura e testada, `routePlanClick` em `src/plan/planmode.ts`. Enquanto a marcação de foto está ativa: os marcadores A e B somem, a planta ganha moldura verde, o cabeçalho nomeia a foto sendo marcada, a área de calibração fica esmaecida e nenhum clique chega à medição de cotas. **Esc** cancela. Dois cliques a menos de 8 px um do outro são recusados com aviso, em vez de virar um azimute de ruído.
+
+`azimuthBetween` foi extraída para `src/plan/spatial.ts`, ao lado de `headingDirection`, e os testes conferem as duas contra a mesma convenção: 0 no topo da planta, 90 à direita.
+
+82 testes passam; TypeScript e build limpos. Nada disso foi aberto em navegador por quem construiu.
+
+Próximo passo: marcar as fotos da sala, o ambiente com mais registros e o único já reconhecido com segurança.
+
 ## 06/09/2026 — F2: poses fotográficas, com o contrato evoluído para a versão 2
 
 O contrato das fotos deixou de proibir associação e pose. `project.json` passa a `schemaVersion 2`; arquivos da F0 continuam sendo aceitos na importação e são migrados, com todas as fotos em `pendente`.

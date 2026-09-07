@@ -38,5 +38,13 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D014 - A planta tem um modo por vez (06/09/2026)
+
+A mesma superfície serve a duas tarefas: medir cotas (pontos A e B) e marcar a pose de uma foto (ponto e direcao). Na primeira versao da F2 os dois desenhos conviviam na tela e um clique fora de hora comecava uma nova cota sem aviso, o que confundiu a marcacao logo no primeiro uso real.
+
+Decisao: o roteamento do clique virou funcao pura (`routePlanClick`, em `src/plan/planmode.ts`), testada; enquanto a marcacao de foto esta ativa os marcadores A e B somem, a planta ganha moldura, o cabecalho nomeia a foto e a area de calibracao fica esmaecida. Esc cancela. Dois cliques colados (menos de 8 px) sao recusados em vez de virar um azimute qualquer.
+
+Alternativa descartada: separar em duas plantas, uma por tarefa. Duplicaria o zoom, o carregamento da imagem e a leitura de coordenadas sem resolver a duvida de qual esta valendo.
+
 ## D013 — 06/09/2026 — Pose amarrada ao cômodo declarado
 Uma pose só é aceita se o ponto cair dentro do contorno do `roomId` declarado, o que liga `project.json` a `apartment.json` na validação. Custo: o traçado passa a ser dependência do contrato das fotos. Ganho: some a classe inteira de erro em que a foto diz um ambiente e a câmera está em outro. Toda pose exige também evidência escrita e confiança declarada; `confirmado` é estado de revisão humana, nunca automático.

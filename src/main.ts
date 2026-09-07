@@ -1,6 +1,7 @@
 import './style.css';
 import { confidences, initialProject, parseProject, poseToWorld, roomOptions, validateProject, type Pose, type Project, type Reference } from './data/validation';
 import { calibrate, compareMeasurement, type Point, type Measurement } from './plan/spatial';
+import { routePlanClick, type PosePick } from './plan/planmode';
 
 const STORAGE = 'vovo-bisa-project-v1';
 let project: Project = initialProject();
@@ -17,7 +18,7 @@ let apartment: import('./data/pilot').Apartment | null = null;
 let derive: typeof import('./data/pilot').deriveApartment | null = null;
 let sceneInfo = '';
 let walking = false;
-let posePick: 'idle' | 'point' | 'heading' = 'idle';
+let posePick: PosePick = 'idle';
 let poseDraft: { u: number; v: number } | null = null;
 let comparing = false;
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
@@ -35,7 +36,7 @@ document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
     <section class="workspace" aria-label="Planta e visualização">
       <article class="panel plan-panel">
         <div class="panel-heading"><div><span class="step">01</span><h2>Planta de referência</h2></div><span id="scale-status" class="badge">Escala não definida</span></div>
-        <div class="plan-tools"><span>Selecione dois pontos de uma cota</span><div><button id="zoom-out" aria-label="Diminuir planta">−</button><button id="zoom-reset" aria-label="Ajustar planta">Ajustar</button><button id="zoom-in" aria-label="Ampliar planta">+</button></div></div>
+        <div class="plan-tools"><span id="plan-mode">Selecione dois pontos de uma cota</span><div><button id="zoom-out" aria-label="Diminuir planta">−</button><button id="zoom-reset" aria-label="Ajustar planta">Ajustar</button><button id="zoom-in" aria-label="Ampliar planta">+</button></div></div>
         <div class="plan-scroll"><svg id="plan" role="img" aria-label="Planta original. Use o formulário abaixo para inserir pontos pelo teclado." viewBox="0 0 ${project.plan.width} ${project.plan.height}"><image id="plan-image" width="${project.plan.width}" height="${project.plan.height}" href="${asset(project.plan.path)}"></image><g id="markers"></g></svg></div>
         <p id="plan-error" class="error" hidden>Não foi possível carregar a planta. Verifique public/assets/references/planta_apartamento.jpeg.</p>
         <div class="calibration">
@@ -86,8 +87,9 @@ function drawMarkers() {
     Object.entries(attrs).forEach(([key, value]) => element.setAttribute(key, value));
     g.append(element); return element;
   };
-  if (selected.length === 2) make('line', { x1: `${selected[0].u}`, y1: `${selected[0].v}`, x2: `${selected[1].u}`, y2: `${selected[1].v}`, stroke: '#b34e30', 'stroke-width': '3', 'stroke-dasharray': '7 4' });
-  selected.forEach((p, index) => {
+  const medindo = posePick === 'idle';
+  if (medindo && selected.length === 2) make('line', { x1: `${selected[0].u}`, y1: `${selected[0].v}`, x2: `${selected[1].u}`, y2: `${selected[1].v}`, stroke: '#b34e30', 'stroke-width': '3', 'stroke-dasharray': '7 4' });
+  if (medindo) selected.forEach((p, index) => {
     make('circle', { cx: `${p.u}`, cy: `${p.v}`, r: '7', fill: '#b34e30', stroke: 'white', 'stroke-width': '2' });
     const text = make('text', { x: `${Math.min(p.u + 12, project.plan.width - 18)}`, y: `${Math.max(20, p.v - 12)}`, fill: '#92381f', 'font-size': '20', 'font-weight': '700', stroke: 'white', 'stroke-width': '3', 'paint-order': 'stroke' });
     text.textContent = index === 0 ? 'A' : 'B';
@@ -103,7 +105,9 @@ function drawMarkers() {
     }
   }
   ['a-u', 'a-v', 'b-u', 'b-v'].forEach((id, index) => { const p = selected[Math.floor(index / 2)]; el<HTMLInputElement>(id).value = p ? String(p[index % 2 === 0 ? 'u' : 'v']) : ''; });
-  el('selection-help').textContent = selected.length === 2 ? `A (${fmt(selected[0].u, 1)}; ${fmt(selected[0].v, 1)}) → B (${fmt(selected[1].u, 1)}; ${fmt(selected[1].v, 1)}). Informe a distância real.` : selected.length === 1 ? 'Ponto A marcado. Agora selecione o ponto B.' : 'Marque A e B nas extremidades de uma medida conhecida.';
+  el('selection-help').textContent = !medindo
+    ? 'Marcacao de foto em andamento. A medicao de cotas volta quando ela terminar ou for cancelada.'
+    : selected.length === 2 ? `A (${fmt(selected[0].u, 1)}; ${fmt(selected[0].v, 1)}) → B (${fmt(selected[1].u, 1)}; ${fmt(selected[1].v, 1)}). Informe a distância real.` : selected.length === 1 ? 'Ponto A marcado. Agora selecione o ponto B.' : 'Marque A e B nas extremidades de uma medida conhecida.';
 }
 svg.addEventListener('click', event => {
   const matrix = svg.getScreenCTM();
@@ -111,14 +115,21 @@ svg.addEventListener('click', event => {
   const p = new DOMPoint(event.clientX, event.clientY).matrixTransform(matrix.inverse());
   if (p.x < 0 || p.y < 0 || p.x > project.plan.width || p.y > project.plan.height) return;
   const clique = { u: Math.round(p.x * 100) / 100, v: Math.round(p.y * 100) / 100 };
-  if (posePick === 'point') { poseDraft = clique; posePick = 'heading'; renderPoseHelp(); drawMarkers(); return; }
-  if (posePick === 'heading' && poseDraft) {
-    const grau = (Math.atan2(clique.u - poseDraft.u, poseDraft.v - clique.v) * 180 / Math.PI + 360) % 360;
-    el<HTMLInputElement>('pose-heading').value = String(Math.round(grau));
-    posePick = 'idle'; renderPoseHelp(); drawMarkers(); return;
+  const acao = routePlanClick(posePick, poseDraft, clique);
+  if (acao.target === 'ignored') { notify(acao.reason, true); return; }
+  if (acao.target === 'pose-point') { poseDraft = acao.point; setPosePick('heading'); return; }
+  if (acao.target === 'pose-heading') {
+    el<HTMLInputElement>('pose-heading').value = String(Math.round(acao.headingDeg));
+    setPosePick('idle');
+    notify('Direcao registrada. Reveja os campos e salve como proposta.');
+    return;
   }
   if (selected.length === 2) selected = [];
-  selected.push(clique); drawMarkers();
+  selected.push(acao.point); drawMarkers();
+});
+// Sair da marcacao pelo teclado, sem precisar procurar o botao.
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape' && posePick !== 'idle') { poseDraft = null; setPosePick('idle'); }
 });
 el('use-coordinates').onclick = () => {
   const values = ['a-u', 'a-v', 'b-u', 'b-v'].map(id => el<HTMLInputElement>(id).valueAsNumber);
@@ -163,6 +174,19 @@ el('calibrate-form').onsubmit = event => {
 
 const ESTADOS: Record<string, string> = { pendente: 'pendente', proposto: 'proposta', confirmado: 'confirmada' };
 const rotuloConfianca: Record<string, string> = { baixa: 'baixa', media: 'media', alta: 'alta' };
+
+// Unico lugar que troca o modo da planta: texto do cabecalho, moldura, marcadores e ajuda.
+function setPosePick(next: PosePick) {
+  posePick = next;
+  const foto = selectedPhoto ? selectedPhoto.id.replace(/^foto_/, '').replace(/_/g, ' ') : 'foto';
+  el('plan-mode').textContent = next === 'idle'
+    ? 'Selecione dois pontos de uma cota'
+    : next === 'point'
+      ? `Marcando ${foto}: clique onde a camera estava`
+      : `Marcando ${foto}: clique para onde ela apontava`;
+  document.querySelector('.plan-panel')!.classList.toggle('marking', next !== 'idle');
+  renderPoseHelp(); drawMarkers();
+}
 
 function renderPoseHelp() {
   el('pose-help').textContent = posePick === 'point'
@@ -247,7 +271,7 @@ function setComparing(on: boolean) {
 
 function showPhoto(photo: Reference) {
   selectedPhoto = photo;
-  posePick = 'idle'; poseDraft = null; setComparing(false);
+  poseDraft = null; setComparing(false); setPosePick('idle');
   el('preview').hidden = true; el('photo-view').hidden = false; el('show-3d').hidden = false; el('visual-badge').hidden = true; el('scene-tools').hidden = true;
   const img = el<HTMLImageElement>('large-photo'); img.hidden = false; img.alt = `Referência original: ${title(photo)}`;
   el('photo-error').hidden = true; el('photo-error').textContent = `Imagem indisponível: ${photo.path}`; img.src = asset(photo.path);
@@ -266,19 +290,19 @@ el('save-notes').onclick = () => {
 el('show-3d').onclick = () => {
   setComparing(false);
   el('preview').hidden = false; el('photo-view').hidden = true; el('show-3d').hidden = true; el('visual-badge').hidden = false;
-  selectedPhoto = null; posePick = 'idle'; poseDraft = null;
+  selectedPhoto = null; poseDraft = null; setPosePick('idle');
   el('scene-tools').hidden = !project.calibration;
   document.querySelectorAll('.photo-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
   drawMarkers();
 };
 el<HTMLSelectElement>('pose-room').append(...[{ id: '', name: 'Sem ambiente definido' }, ...roomOptions].map(r => new Option(r.name, r.id)));
 el<HTMLSelectElement>('pose-confidence').append(...confidences.map(c => new Option(c, c)));
-el('pose-mark').onclick = () => { posePick = posePick === 'idle' ? 'point' : 'idle'; if (posePick === 'point') poseDraft = null; renderPoseHelp(); drawMarkers(); };
+el('pose-mark').onclick = () => { const ligar = posePick === 'idle'; if (ligar) poseDraft = null; setPosePick(ligar ? 'point' : 'idle'); };
 el('pose-save').onclick = () => savePose('proposto');
 el('pose-confirm').onclick = () => savePose('confirmado');
 el('pose-compare').onclick = () => setComparing(!comparing);
 el<HTMLSelectElement>('pose-room').onchange = () => { if (selectedPhoto && !selectedPhoto.pose) updatePhoto(selectedPhoto.id, { roomId: el<HTMLSelectElement>('pose-room').value || null }, 'Ambiente associado no rascunho.'); };
-el('pose-clear').onclick = () => { if (selectedPhoto) { poseDraft = null; posePick = 'idle'; updatePhoto(selectedPhoto.id, { pose: null, status: 'pendente' }, 'Pose removida. O ambiente associado foi mantido.'); } };
+el('pose-clear').onclick = () => { if (selectedPhoto) { poseDraft = null; setPosePick('idle'); updatePhoto(selectedPhoto.id, { pose: null, status: 'pendente' }, 'Pose removida. O ambiente associado foi mantido.'); } };
 function renderPhotos() {
   const host = el('photos'); host.replaceChildren();
   const sorted = [...project.photos].sort((a, b) => Number(!a.id.includes('sala')) - Number(!b.id.includes('sala')) || a.id.localeCompare(b.id));

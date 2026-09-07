@@ -33,3 +33,8 @@ export function headingDirection(degrees: number) {
   const a = degrees * Math.PI / 180;
   return { x: Math.sin(a), y: 0, z: -Math.cos(a) };
 }
+
+// Azimute de um ponto para outro na convenção da planta: 0 = topo (-v), 90 = direita (+u).
+export function azimuthBetween(from: Point, to: Point): number {
+  return (Math.atan2(to.u - from.u, from.v - to.v) * 180 / Math.PI + 360) % 360;
+}

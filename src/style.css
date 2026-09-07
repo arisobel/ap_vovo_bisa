@@ -14,3 +14,4 @@
 #pose-help{margin:8px 0 0;font-size:.82rem}
 .photo-state[data-status=proposto]{color:#8a5a1f}
 .photo-state[data-status=confirmado]{color:#244d42;font-weight:600}
+.plan-panel.marking{box-shadow:inset 0 0 0 2px #2f6a58}.plan-panel.marking #plan-mode{color:#2f6a58;font-weight:700}.plan-panel.marking .plan-scroll{background:#eef4ee}.plan-panel.marking .calibration{opacity:.45}

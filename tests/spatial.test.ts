@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { calibrate, compareMeasurement, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
+import { azimuthBetween, calibrate, compareMeasurement, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
+import { MIN_HEADING_PIXELS, routePlanClick } from '../src/plan/planmode';
 
 describe('regras espaciais', () => {
   it('calibra em metros e preserva ida/volta com origem deslocada', () => {
@@ -28,5 +29,43 @@ describe('regras espaciais', () => {
   it.each([[0, 0, -1], [90, 1, 0], [180, 0, 1], [270, -1, 0]])('azimute %s', (a, x, z) => {
     expect(headingDirection(a).x).toBeCloseTo(x);
     expect(headingDirection(a).z).toBeCloseTo(z);
+  });
+});
+
+describe('modo da planta', () => {
+  const A = { u: 200, v: 400 };
+
+  it('mede a cota apenas quando nenhuma foto está sendo marcada', () => {
+    expect(routePlanClick('idle', null, A)).toEqual({ target: 'calibration', point: A });
+    expect(routePlanClick('idle', { u: 10, v: 10 }, A)).toEqual({ target: 'calibration', point: A });
+  });
+
+  it('não deixa o clique da foto virar ponto de cota', () => {
+    expect(routePlanClick('point', null, A).target).toBe('pose-point');
+    expect(routePlanClick('heading', { u: 200, v: 500 }, A).target).toBe('pose-heading');
+  });
+
+  it('lê a direção pela mesma convenção de azimute das paredes', () => {
+    const cases: [number, number, number][] = [[200, 300, 0], [300, 400, 90], [200, 500, 180], [100, 400, 270]];
+    for (const [u, v, esperado] of cases) {
+      const acao = routePlanClick('heading', A, { u, v });
+      expect(acao.target === 'pose-heading' && acao.headingDeg).toBeCloseTo(esperado, 9);
+      expect(azimuthBetween(A, { u, v })).toBeCloseTo(esperado, 9);
+    }
+  });
+
+  it('recusa direção sem ponto e cliques colados no ponto', () => {
+    expect(routePlanClick('heading', null, A).target).toBe('ignored');
+    expect(routePlanClick('heading', A, { u: A.u + 3, v: A.v + 3 }).target).toBe('ignored');
+    expect(routePlanClick('heading', A, { u: A.u + MIN_HEADING_PIXELS, v: A.v }).target).toBe('pose-heading');
+  });
+
+  it('mantém o azimute dentro de 0 a 360, aberto no fim', () => {
+    for (let u = -300; u <= 300; u += 7) for (let v = -300; v <= 300; v += 7) {
+      if (u === 0 && v === 0) continue;
+      const grau = azimuthBetween(A, { u: A.u + u, v: A.v + v });
+      expect(grau).toBeGreaterThanOrEqual(0);
+      expect(grau).toBeLessThan(360);
+    }
   });
 });

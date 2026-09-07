@@ -58,6 +58,10 @@ $caproverUrl = Require-EnvironmentValue -Name 'CAPROVER_URL' -Values $deployEnvi
 $caproverApp = Require-EnvironmentValue -Name 'CAPROVER_APP' -Values $deployEnvironment
 $appToken = Require-EnvironmentValue -Name 'CAPROVER_APP_TOKEN' -Values $deployEnvironment
 
+# Barra final vira barra dupla quando a CLI concatena o caminho da API, e o servidor
+# responde 404 a //api/v2/... . Cortar aqui evita depender de como o .env foi escrito.
+$caproverUrl = $caproverUrl.TrimEnd('/')
+
 $uri = $null
 if (-not [Uri]::TryCreate($caproverUrl, [UriKind]::Absolute, [ref]$uri) -or $uri.Scheme -ne 'https') {
     throw 'CAPROVER_URL deve ser uma URL HTTPS completa, por exemplo https://captain.exemplo.com'

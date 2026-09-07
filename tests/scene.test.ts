@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, poseRotation, resolveCollision, startingPoint, wallBlocks } from '../src/scene/preview';
+import { barriersFrom, headingFromYaw, poseRotation, resolveCollision, startingPoint, wallBlocks } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
-import { calibrate, headingDirection } from '../src/plan/spatial';
+import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
 
 const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
 const rooms = deriveApartment(initialApartment(), transform);
@@ -157,5 +157,31 @@ describe('gradil do terraço', () => {
   it('continua barrando quem caminha, apesar de baixo', () => {
     const gradil = terraco.walls.filter(w => w.id !== 'terraco-norte');
     expect(barriersFrom([{ ...terraco, walls: gradil }])).toHaveLength(3);
+  });
+});
+
+describe('planta sincronizada com o passeio', () => {
+  it('lê o azimute da câmera de volta pela mesma convenção', () => {
+    for (const grau of [0, 35, 89, 152, 244, 270, 359]) {
+      const { y } = poseRotation({ headingDeg: grau, pitchDeg: 0 });
+      expect(headingFromYaw(y)).toBeCloseTo(grau, 9);
+    }
+  });
+
+  it('mantém o azimute em 0 a 360, aberto no fim, para qualquer yaw', () => {
+    for (let yaw = -8; yaw <= 8; yaw += 0.13) {
+      const grau = headingFromYaw(yaw);
+      expect(grau).toBeGreaterThanOrEqual(0);
+      expect(grau).toBeLessThan(360);
+    }
+  });
+
+  it('leva a posição do passeio de volta ao pixel da planta', () => {
+    const t = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+    const partida = startingPoint(deriveApartment(initialApartment(), t));
+    const pixel = worldToPlan(partida!, t);
+    expect(pixel.u).toBeGreaterThan(52);
+    expect(pixel.u).toBeLessThan(395);
+    expect(planToWorld(pixel, t).x).toBeCloseTo(partida!.x, 9);
   });
 });

@@ -1,6 +1,6 @@
 import './style.css';
 import { confidences, initialProject, parseProject, poseToWorld, roomOptions, validateProject, type Pose, type Project, type Reference } from './data/validation';
-import { pixelDistance, azimuthBetween, calibrate, compareMeasurement, type Point, type Measurement } from './plan/spatial';
+import { worldToPlan, pixelDistance, azimuthBetween, calibrate, compareMeasurement, type Point, type Measurement } from './plan/spatial';
 import { MIN_HEADING_PIXELS, routePlanClick, type PosePick } from './plan/planmode';
 
 const STORAGE = 'vovo-bisa-project-v1';
@@ -20,6 +20,7 @@ let sceneInfo = '';
 let walking = false;
 let posePick: PosePick = 'idle';
 let mouse: { u: number; v: number } | null = null;
+let walker: { u: number; v: number; headingDeg: number } | null = null;
 let poseDraft: { u: number; v: number } | null = null;
 let comparing = false;
 const asset = (path: string) => `${import.meta.env.BASE_URL}${path}`;
@@ -129,6 +130,14 @@ function drawMarkers() {
       const texto = make('text', { x: `${Math.min(px + 10, project.plan.width - 40)}`, y: `${Math.max(18, py - 10)}`, fill: '#1d4b3d', 'font-size': '19', 'font-weight': '700', stroke: 'white', 'stroke-width': '3.5', 'paint-order': 'stroke' });
       texto.textContent = `${Math.round(grau)}°`;
     }
+  }
+  if (walker) {
+    const rad = walker.headingDeg * Math.PI / 180;
+    const px = walker.u + Math.sin(rad) * 34, py = walker.v - Math.cos(rad) * 34;
+    make('line', { x1: `${walker.u}`, y1: `${walker.v}`, x2: `${px}`, y2: `${py}`, stroke: '#b34e30', 'stroke-width': '3' });
+    const asa = (lado: number) => `${px - Math.sin(rad + lado) * 12},${py + Math.cos(rad + lado) * 12}`;
+    make('polyline', { points: `${asa(-0.45)} ${px},${py} ${asa(0.45)}`, fill: 'none', stroke: '#b34e30', 'stroke-width': '3' });
+    make('circle', { cx: `${walker.u}`, cy: `${walker.v}`, r: '7', fill: '#f4f6ef', stroke: '#b34e30', 'stroke-width': '3' });
   }
   ['a-u', 'a-v', 'b-u', 'b-v'].forEach((id, index) => { const p = selected[Math.floor(index / 2)]; el<HTMLInputElement>(id).value = p ? String(p[index % 2 === 0 ? 'u' : 'v']) : ''; });
   el('selection-help').textContent = !medindo
@@ -398,13 +407,20 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
   apartment = pilot.initialApartment();
   derive = pilot.deriveApartment;
   scene = preview.mountPreview(el('preview'), message => { el('webgl-status').textContent = message; });
-  scene.setWalkListener(ativo => {
+  scene.setWalkListener(estado => {
+    const ativo = estado !== null;
+    // A planta acompanha o passeio: mesma transformação que levanta as paredes, ao contrário.
+    walker = estado && project.calibration
+      ? { ...worldToPlan(estado, project.calibration.transform), headingDeg: estado.headingDeg }
+      : null;
+    drawMarkers();
+    if (ativo === walking) return;
     walking = ativo;
     el('scene-walk').textContent = ativo ? 'Sair do passeio (Esc)' : 'Andar por dentro';
     el('scene-walk').classList.toggle('primary', !ativo);
     for (const id of ['scene-frame', 'scene-top', 'scene-walls']) el<HTMLButtonElement>(id).disabled = ativo;
     el('scene-info').textContent = ativo
-      ? 'Passeio: W A S D ou setas para andar, mouse para olhar, Shift para acelerar, Esc para sair. Olhos a 1,60 m do piso.'
+      ? 'Passeio: W A S D ou setas para andar, mouse para olhar, Shift para acelerar, Esc para sair. Olhos a 1,60 m do piso. A seta laranja na planta mostra onde você está e para onde olha.'
       : sceneInfo;
   });
   el('scene-walk').onclick = () => (walking ? scene?.exitWalk() : scene?.enterWalk());

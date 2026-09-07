@@ -1,5 +1,17 @@
 # Progresso
 
+## 07/09/2026 — F3 concluída: a planta acompanha quem caminha
+
+O passeio já tinha colisão; faltava saber onde se está. Agora, ao entrar no passeio, uma seta laranja aparece na planta mostrando posição e direção, atualizada a cada passo. A conversão usa `worldToPlan`, a mesma transformação que levanta as paredes, e `headingFromYaw`, inversa exata de `poseRotation` — há teste de ida e volta entre as duas, porque essa é a emenda onde um sinal trocado passaria despercebido.
+
+O aviso de passeio deixou de ser um booleano e passou a carregar posição e azimute, emitidos só quando mudam mais de 1 cm ou meio grau: a planta não precisa ser redesenhada 60 vezes por segundo.
+
+Isso fecha a F3. Serve direto à conferência das poses: caminhando até o ponto de uma fotografia dá para comparar o que se vê com o que ela mostra.
+
+95 testes passam; TypeScript e build limpos. Nenhuma tela foi aberta em navegador por quem construiu.
+
+Próximo passo: F4, materiais e elementos, depois de o usuário conferir as poses no navegador.
+
 ## 07/09/2026 — O terraço deixou de ser cercado por paredes de 2,70 m
 
 O usuário observou em 06/09/2026, ao rever a cena, que os três fechamentos do terraço são gradil e não parede. A correção ficou pendente porque a altura era global; agora não é mais.

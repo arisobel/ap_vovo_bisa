@@ -13,7 +13,7 @@ export type PreviewHandle = {
   enterWalk(): void;
   exitWalk(): void;
   viewFromPose(pose: PoseView | null): void;
-  setWalkListener(listener: (walking: boolean) => void): void;
+  setWalkListener(listener: (state: WalkState | null) => void): void;
   dispose(): void;
 };
 
@@ -24,6 +24,14 @@ export const ALTURA_OLHOS = 1.6;
 const ALTURA_CORPO = 1.8;
 const RAIO_CORPO = .28;
 const VELOCIDADE = 2.6;
+
+// Onde quem caminha está e para onde olha, na mesma convenção de azimute da planta.
+export type WalkState = { x: number; z: number; headingDeg: number };
+
+// Inversa de poseRotation: o yaw da câmera do Three.js de volta para azimute de planta.
+export function headingFromYaw(yaw: number): number {
+  return ((-yaw * 180 / Math.PI) % 360 + 360) % 360;
+}
 
 export type WallBlock = { position: [number, number, number]; size: [number, number, number]; rotationY: number };
 
@@ -215,7 +223,17 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   let partida: Ponto | null = null;
   let andando = false;
   let emPose = false;
-  let avisarPasseio: (walking: boolean) => void = () => {};
+  let avisarPasseio: (state: WalkState | null) => void = () => {};
+  let ultimo: WalkState | null = null;
+
+  // Só avisa quando de fato mudou: a planta não precisa ser redesenhada 60 vezes por segundo.
+  function avisarPosicao() {
+    const estado = { x: camera.position.x, z: camera.position.z, headingDeg: headingFromYaw(yaw) };
+    if (ultimo && Math.abs(ultimo.x - estado.x) < 0.01 && Math.abs(ultimo.z - estado.z) < 0.01
+      && Math.abs(ultimo.headingDeg - estado.headingDeg) < 0.5) return;
+    ultimo = estado;
+    avisarPasseio(estado);
+  }
   const teclas = new Set<string>();
   let yaw = 0, pitch = 0, quadro = 0, instante = 0;
 
@@ -342,6 +360,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     }
     camera.rotation.set(pitch, yaw, 0, 'YXZ');
     camera.position.y = ALTURA_OLHOS;
+    avisarPosicao();
     render();
   }
 
@@ -362,7 +381,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     tela.requestPointerLock?.();
     instante = performance.now();
     quadro = requestAnimationFrame(passo);
-    avisarPasseio(true);
+    ultimo = null;
+    avisarPosicao();
   }
 
   function exitWalk() {
@@ -375,7 +395,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     document.removeEventListener('pointerlockchange', aoTrocarTrava);
     if (document.pointerLockElement === tela) document.exitPointerLock?.();
     controls.enabled = true;
-    avisarPasseio(false);
+    ultimo = null;
+    avisarPasseio(null);
     frame();
   }
 

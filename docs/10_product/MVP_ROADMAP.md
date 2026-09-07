@@ -10,7 +10,7 @@ Requisitos e critérios completos: `PRD.md`, seções 4 e 8.
 | F3 | Passeio, colisões e planta sincronizada | Percurso testado sem atravessar barreiras |
 | F4 | Materiais e elementos selecionados | Aparência melhor sem regressão de navegação |
 
-Fase atual: F0, F1 e F2 concluídas. F3 tem passeio e colisão; falta a planta sincronizada com a posição de quem caminha.
+Fase atual: F0, F1, F2 e F3 concluídas. O passeio tem colisão e a planta acompanha quem caminha, com seta que mostra posição e direção. Falta a F4: materiais e elementos.
 
 A F2 passou em 07/09/2026: as 11 fotografias foram associadas a um ambiente, marcadas com ponto e direção na planta e **confirmadas pelo usuário**, cada uma com evidência escrita. Sete delas foram marcadas do cômodo vizinho olhando para dentro do alvo, o que é o registro correto: a pose diz onde a câmera estava, não o que a foto mostra.
 

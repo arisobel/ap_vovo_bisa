@@ -296,6 +296,10 @@ export function labelPlacement(room: SceneRoom) {
   return { center: centro, width: Math.max(.5, width), area: roomArea(room.contour) };
 }
 
+// Seta do letreiro de porta. Aponta para cima, no sentido de "siga por aqui", e não para
+// o lado, que sugeria uma direção lateral que a porta não tem.
+export const SETA_DESTINO = '↑';
+
 export type SurfaceLabel = { text: string; x: number; y: number; z: number; rotationY: number; width: number; kind: 'parede' | 'porta' };
 
 // Direção para onde a superfície olha, a partir da rotação em Y.
@@ -363,7 +367,7 @@ export function doorwayLabels(rooms: SceneRoom[]): SurfaceLabel[] {
         const vizinho = rooms.find(r => r !== room && dentro(r.contour, alem.x, alem.z));
         if (!vizinho) continue;
         rotulos.push({
-          text: `→ ${vizinho.name}`,
+          text: `${SETA_DESTINO} ${vizinho.name}`,
           x: px - foraX * .03,
           y: Math.min(topo + .22, wall.height - .12),
           z: pz - foraZ * .03,
@@ -392,7 +396,7 @@ export function startingPoint(rooms: SceneRoom[]): Ponto | null {
   return innerPoint(melhorSala.contour);
 }
 
-export function mountPreview(host: HTMLElement, report: (message: string) => void): PreviewHandle {
+export function mountPreview(host: HTMLElement, report: (message: string) => void, fullscreenTarget?: HTMLElement): PreviewHandle {
   let renderer: WebGLRenderer;
   try { renderer = new WebGLRenderer({ antialias: true, alpha: false }); }
   catch {
@@ -456,6 +460,22 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   let andando = false;
   let emPose = false;
   let alturaOlhos = ALTURA_OLHOS;
+  const alvoTelaCheia = fullscreenTarget ?? host;
+  let trocaDeTela = 0;
+
+  function alternarTelaCheia() {
+    trocaDeTela = performance.now();
+    if (document.fullscreenElement === alvoTelaCheia) document.exitFullscreen?.().catch(() => {});
+    else alvoTelaCheia.requestFullscreen?.().catch(() => report('O navegador recusou a tela cheia.'));
+  }
+
+  // Entrar ou sair de tela cheia solta o ponteiro em alguns navegadores. Sem isto, o passeio
+  // terminaria sozinho no instante em que a tela cheia é acionada.
+  const aoTrocarTelaCheia = () => {
+    if (!andando) return;
+    trocaDeTela = performance.now();
+    if (document.pointerLockElement !== tela) tela.requestPointerLock?.();
+  };
   let poseDeOrigem: PoseView | null = null;
   let avisarPasseio: (state: WalkState | null) => void = () => {};
   let ultimo: WalkState | null = null;
@@ -668,11 +688,17 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   const aoTeclar = (event: KeyboardEvent) => {
     if (!andando) return;
     if (event.key === 'Escape') { exitWalk(); return; }
+    if (event.key === 'f' || event.key === 'F') { event.preventDefault(); alternarTelaCheia(); return; }
     if ([' ', 'ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight'].includes(event.key)) event.preventDefault();
     teclas.add(event.key.toLowerCase());
   };
   const aoSoltar = (event: KeyboardEvent) => teclas.delete(event.key.toLowerCase());
-  const aoTrocarTrava = () => { if (andando && document.pointerLockElement !== tela) exitWalk(); };
+  const aoTrocarTrava = () => {
+    if (!andando || document.pointerLockElement === tela) return;
+    // Perda de ponteiro logo após uma troca de tela cheia é da transição, não do usuário.
+    if (performance.now() - trocaDeTela < 900) { tela.requestPointerLock?.(); return; }
+    exitWalk();
+  };
 
   function passo(agora: number) {
     if (!andando) return;
@@ -725,6 +751,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     document.addEventListener('mousemove', aoMover);
     document.addEventListener('pointerlockchange', aoTrocarTrava);
     tela.addEventListener('wheel', aoRolar, { passive: false });
+    document.addEventListener('fullscreenchange', aoTrocarTelaCheia);
     letreiros.visible = true;
     tela.focus();
     tela.requestPointerLock?.();
@@ -743,6 +770,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     document.removeEventListener('mousemove', aoMover);
     document.removeEventListener('pointerlockchange', aoTrocarTrava);
     tela.removeEventListener('wheel', aoRolar);
+    document.removeEventListener('fullscreenchange', aoTrocarTelaCheia);
     letreiros.visible = false;
     camera.fov = FOV_PASSEIO;
     camera.updateProjectionMatrix();
@@ -775,11 +803,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   return {
     show, setWallsVisible, lookFromTop, frame, enterWalk, exitWalk, viewFromPose,
     setWalkListener(listener) { avisarPasseio = listener; },
-    toggleFullscreen() {
-      if (document.fullscreenElement === host) document.exitFullscreen?.();
-      else host.requestFullscreen?.().catch(() => report('O navegador recusou a tela cheia.'));
-    },
-    isFullscreen() { return document.fullscreenElement === host; },
+    toggleFullscreen() { alternarTelaCheia(); },
+    isFullscreen() { return document.fullscreenElement === alvoTelaCheia; },
     setLabels(visible) {
       if (visible === comRotulos) return;
       comRotulos = visible;

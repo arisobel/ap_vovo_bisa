@@ -1,5 +1,17 @@
 # Progresso
 
+## 07/09/2026 — Correção da tela cheia, e a seta do letreiro de porta
+
+Dois retornos do usuário depois de usar. O primeiro, cosmético: a seta lateral do letreiro de porta sugeria uma direção que a porta não tem; virou seta para cima, no sentido de seguir por aqui. Constante compartilhada entre o código e o teste, para não divergirem.
+
+O segundo era erro de projeto meu. A tela cheia valia só para a caixa da cena, então a barra de botões ficava fora dela e não havia como entrar no passeio já em tela cheia. E durante o passeio o ponteiro está capturado, de modo que nenhum botão é clicável — o botão de tela cheia era inalcançável justamente quando mais servia.
+
+Agora o alvo da tela cheia é o painel inteiro, informado pela página a `mountPreview`; cabeçalho e rodapé somem, a barra fica. E a tecla **F** alterna tela cheia de dentro do passeio (D021).
+
+Havia ainda uma armadilha: entrar ou sair de tela cheia solta o ponteiro em alguns navegadores, e o passeio terminaria sozinho no instante em que a tela cheia fosse acionada. Perda de ponteiro dentro de 900 ms de uma troca de tela cheia passou a ser tratada como transição, com o ponteiro pedido de volta em vez de o passeio ser encerrado.
+
+134 testes passam; TypeScript e build limpos. Nada disso foi aberto em navegador por quem construiu — e este é justamente um comportamento que só o navegador confirma.
+
 ## 07/09/2026 — Orientação, tela cheia e zoom no passeio
 
 Cinco pedidos do usuário depois de usar a visita publicada, todos sobre o passeio.

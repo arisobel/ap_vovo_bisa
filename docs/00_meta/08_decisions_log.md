@@ -38,6 +38,14 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D021 - A tela cheia leva o painel, não a caixa da cena (07/09/2026)
+
+Primeira versão punha em tela cheia apenas o elemento da cena. Dois defeitos apareceram no uso: em tela cheia a barra de botões ficava de fora, então não havia como entrar no passeio; e durante o passeio o ponteiro está capturado, então nenhum botão é clicável de qualquer forma.
+
+Decisao: o alvo da tela cheia passa a ser o painel inteiro, informado pela página a `mountPreview`. Cabeçalho e rodapé somem em tela cheia, a barra de botões fica. E a tecla **F** alterna tela cheia de dentro do passeio, que é o único caminho quando o mouse está preso.
+
+Entrar e sair de tela cheia solta o ponteiro em alguns navegadores. Sem tratamento, o passeio terminaria sozinho no instante em que a tela cheia fosse acionada: perda de ponteiro dentro de 900 ms de uma troca de tela cheia é tratada como transição, e o ponteiro é pedido de volta em vez de encerrar o passeio.
+
 ## D020 - Orientação no passeio vem de letreiros nas superfícies, não do rótulo do piso (07/09/2026)
 
 O rótulo no piso resolveu a visão de cima e não resolveu o passeio: a 1,60 m de altura, olhando para a frente, o chão sob os pés fica fora do campo de visão.

@@ -408,7 +408,10 @@ function renderScene() {
 Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview, pilot]) => {
   apartment = pilot.initialApartment();
   derive = pilot.deriveApartment;
-  scene = preview.mountPreview(el('preview'), message => { el('webgl-status').textContent = message; });
+  // A tela cheia leva o painel inteiro, não só a caixa da cena: dentro dela a barra de
+  // botões continua visível, e é a única forma de acionar o passeio já em tela cheia.
+  const painel = el('preview').closest('.visual-panel') as HTMLElement;
+  scene = preview.mountPreview(el('preview'), message => { el('webgl-status').textContent = message; }, painel);
   scene.setWalkListener(estado => {
     const ativo = estado !== null;
     // A planta acompanha o passeio: mesma transformação que levanta as paredes, ao contrário.
@@ -422,7 +425,7 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     el('scene-walk').classList.toggle('primary', !ativo);
     for (const id of ['scene-frame', 'scene-top', 'scene-walls', 'scene-palette', 'scene-furniture', 'scene-labels']) el<HTMLButtonElement>(id).disabled = ativo;
     el('scene-info').textContent = ativo
-      ? 'Passeio: W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, Esc para sair. O leque laranja na planta acompanha sua vista.'
+      ? 'Passeio: W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, F para tela cheia, Esc para sair. O leque laranja na planta acompanha sua vista.'
       : sceneInfo;
   });
   el('scene-walk').onclick = () => {

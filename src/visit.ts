@@ -165,7 +165,10 @@ el('visit-frame').onclick = () => {
 };
 
 Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview, pilot]) => {
-  scene = preview.mountPreview(el('preview'), message => { el('visit-info').textContent = message; });
+  // A tela cheia leva o painel inteiro, não só a caixa da cena: dentro dela a barra de
+  // botões continua visível, e é a única forma de acionar o passeio já em tela cheia.
+  const painel = el('preview').closest('.visual-panel') as HTMLElement;
+  scene = preview.mountPreview(el('preview'), message => { el('visit-info').textContent = message; }, painel);
   scene.setWalkListener(estado => {
     const ativo = estado !== null;
     caminhante = estado && project.calibration
@@ -179,7 +182,7 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     el('visit-walk').classList.toggle('primary', !ativo);
     for (const id of ['visit-frame', 'visit-photo', 'visit-furniture', 'visit-labels']) el<HTMLButtonElement>(id).disabled = ativo;
     el('visit-info').textContent = ativo
-      ? 'W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, Esc para sair. O leque na planta acompanha sua vista.'
+      ? 'W A S D ou setas para andar, mouse para olhar, roda do mouse para aproximar, Shift para acelerar, F para tela cheia, Esc para sair. O leque na planta acompanha sua vista.'
       : selecionada
         ? `Você está no ponto de ${title(selecionada)}, olhando na mesma direção da fotografia.`
         : 'Reconstruído a partir da planta e das fotografias.';

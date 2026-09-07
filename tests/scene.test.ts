@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, doorwayLabels, fixtureBlock, FOV_MAX, FOV_MIN, FOV_PASSEIO, headingFromYaw, horizontalFovDeg, innerPoint, labelFacing, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks, wallLabels, zoomFov } from '../src/scene/preview';
+import { barriersFrom, doorwayLabels, SETA_DESTINO, fixtureBlock, FOV_MAX, FOV_MIN, FOV_PASSEIO, headingFromYaw, horizontalFovDeg, innerPoint, labelFacing, labelPlacement, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, roomArea, startingPoint, walkStartFromPose, wallBlocks, wallLabels, zoomFov } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
 import { POSE_LIMITS } from '../src/data/validation';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
@@ -408,7 +408,7 @@ describe('letreiros de parede e de porta', () => {
     expect(rotulos.length).toBeGreaterThan(10);
     const nomes = new Set(salas.map(s => s.name));
     for (const label of rotulos) {
-      const nome = label.text.replace('→ ', '');
+      const nome = label.text.replace(`${SETA_DESTINO} `, '');
       expect(nomes.has(nome), label.text).toBe(true);
       const olhar = labelFacing(label.rotationY);
       // O letreiro é lido de dentro do cômodo de origem, que não é o cômodo nomeado.
@@ -454,3 +454,12 @@ function dentroDoContorno(contour: { x: number; z: number }[], p: { x: number; z
   }
   return dentro;
 }
+
+describe('letreiro de porta aponta para frente', () => {
+  it('usa a seta para cima, no sentido de seguir por aqui', () => {
+    expect(SETA_DESTINO).toBe('\u2191');
+    const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+    const rotulos = doorwayLabels(deriveApartment(initialApartment(), transform));
+    expect(rotulos.every(l => l.text.startsWith(`${SETA_DESTINO} `))).toBe(true);
+  });
+});

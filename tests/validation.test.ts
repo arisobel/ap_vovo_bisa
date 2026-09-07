@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { horizontalFov, initialProject, parseProject, poseToWorld, validateProject, type Pose } from '../src/data/validation';
+import { horizontalFov, initialProject, parseProject, poseToWorld, roomOptions, validateProject, type Pose } from '../src/data/validation';
 import { calibrate } from '../src/plan/spatial';
 
 const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
@@ -9,17 +9,39 @@ const poseLiving: Pose = {
   confidence: 'baixa', evidence: 'Marcação inicial para teste; nada conferido em campo.',
 };
 
+// O arquivo do repositório carrega o trabalho real do usuário e muda a cada marcação.
+// Os testes de regra usam uma cópia sem poses, para não depender desse estado.
+function semPoses() {
+  const project = initialProject();
+  project.photos.forEach(photo => { photo.roomId = null; photo.pose = null; photo.status = 'pendente'; });
+  return validateProject(project);
+}
+
 describe('contrato portátil', () => {
-  it('preserva as 11 fotos pendentes e a planta em exportação/importação', () => {
+  it('reimporta o arquivo do repositório sem perder nada', () => {
     const project = initialProject();
     expect(project.schemaVersion).toBe(2);
     expect(project.photos).toHaveLength(11);
+    expect(parseProject(JSON.stringify(project))).toEqual(project);
+  });
+
+  it('mantém as 11 fotos quando nenhuma tem pose', () => {
+    const project = semPoses();
     expect(project.photos.every(p => p.pose === null && p.roomId === null && p.status === 'pendente')).toBe(true);
     expect(parseProject(JSON.stringify(project))).toEqual(project);
   });
 
+  it('exige que toda pose gravada caia dentro do cômodo declarado', () => {
+    for (const photo of initialProject().photos.filter(p => p.pose)) {
+      const room = roomOptions.find(r => r.id === photo.roomId);
+      expect(room, `${photo.id} aponta para um ambiente inexistente`).toBeDefined();
+      expect(photo.status, `${photo.id} tem pose mas não foi proposta nem confirmada`).not.toBe('pendente');
+      expect(photo.pose!.evidence.trim().length, `${photo.id} tem pose sem evidência`).toBeGreaterThan(0);
+    }
+  });
+
   it('reimporta calibração, conferência e observações sem perder precisão', () => {
-    const project = initialProject();
+    const project = semPoses();
     const reference = { points: [{ u: 20, v: 30 }, { u: 220, v: 30 }] as [{ u: number; v: number }, { u: number; v: number }], distanceMeters: 3.7 };
     project.calibration = { reference, transform: calibrate(reference), check: { points: [{ u: 40, v: 40 }, { u: 40, v: 240 }], distanceMeters: 3.8 }, status: 'proposto' };
     project.photos[0].observations = 'Revisar a janela; ambiente ainda desconhecido.';
@@ -27,14 +49,14 @@ describe('contrato portátil', () => {
   });
 
   it('aceita o arquivo da F0 e o traz para a versão com poses', () => {
-    const antigo = { ...structuredClone(initialProject()), schemaVersion: 1 } as any;
+    const antigo = { ...structuredClone(semPoses()), schemaVersion: 1 } as any;
     const migrado = validateProject(antigo);
     expect(migrado.schemaVersion).toBe(2);
     expect(migrado.photos.every(p => p.status === 'pendente' && p.pose === null)).toBe(true);
   });
 
   it('guarda a pose em pixels e a reimporta idêntica', () => {
-    const project = initialProject();
+    const project = semPoses();
     project.photos[0].roomId = 'living';
     project.photos[0].pose = { ...poseLiving };
     project.photos[0].status = 'proposto';
@@ -44,7 +66,7 @@ describe('contrato portátil', () => {
   });
 
   it('permite associar o ambiente antes de saber o ponto', () => {
-    const project = initialProject();
+    const project = semPoses();
     project.photos[0].roomId = 'cozinha';
     expect(parseProject(JSON.stringify(project)).photos[0]).toMatchObject({ roomId: 'cozinha', pose: null, status: 'pendente' });
   });
@@ -69,16 +91,16 @@ describe('contrato portátil', () => {
     ['planta redimensionada', (p: any) => { p.plan.width = 1; }],
     ['calibração ausente', (p: any) => { delete p.calibration; }],
   ])('rejeita %s e mantém o estado válido', (_label, mutate) => {
-    const current = initialProject();
+    const current = semPoses();
     const before = JSON.stringify(current);
     const invalid = structuredClone(current) as any;
     mutate(invalid);
     expect(() => validateProject(invalid)).toThrow();
-    expect(JSON.stringify(initialProject())).toBe(before);
+    expect(JSON.stringify(semPoses())).toBe(before);
   });
 
   it('rejeita escala adulterada e coordenadas fora da planta', () => {
-    const project = initialProject();
+    const project = semPoses();
     project.calibration = { reference: { points: [{ u: 0, v: 0 }, { u: 100, v: 0 }], distanceMeters: 2 }, transform: { origin: { u: 0, v: 0 }, metersPerPixel: .04 }, check: null, status: 'proposto' };
     expect(() => validateProject(project)).toThrow(/inconsistente/);
     project.calibration.reference.points[1].u = 99999;

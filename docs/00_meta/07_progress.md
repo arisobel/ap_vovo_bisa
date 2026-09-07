@@ -1,5 +1,17 @@
 # Progresso
 
+## 07/09/2026 — F2 concluída: as 11 fotografias marcadas e confirmadas
+
+O usuário associou, marcou e confirmou as 11 fotografias, cada uma com evidência escrita, e versionou `src/data/project.json`. Sete foram marcadas do cômodo vizinho olhando para dentro do alvo — a pose registra onde a câmera estava, não o que a foto mostra, e o validador impõe isso ao exigir que o ponto caia dentro do cômodo declarado.
+
+Os dados reais quebraram quatro testes e o TypeScript. A causa era minha: os testes liam `initialProject()` e afirmavam que as 11 fotos estavam pendentes, o que deixou de ser verdade no instante em que o arquivo passou a carregar trabalho. Testes de regra agora constroem sua própria cópia sem poses (`semPoses()`); em troca entrou um teste que lê o arquivo real e exige de toda pose gravada ambiente existente, estado diferente de `pendente` e evidência não vazia. O contrato também deixou de tratar a foto do arquivo como se tivesse sempre `roomId: null`: só a identidade da referência é imutável (`Identity`).
+
+Três ressalvas ficaram registradas no roadmap, nenhuma corrigida por inferência: a evidência de `foto_quarto_02` cita o Dormitório 1 enquanto o azimute aponta para o Dormitório 2; três poses ficaram a menos de 0,20 m da parede, `foto_outro_banheiro_01` a 0,02 m; e todas mantiveram o campo vertical padrão de 55°, provavelmente estreito para retrato 1086×1448.
+
+85 testes passam; TypeScript e build limpos. Nenhuma pose foi comparada com o modelo em navegador.
+
+Próximo passo: comparar as poses com o modelo e resolver as três ressalvas antes de tratar materiais.
+
 ## 07/09/2026 — A direção da foto passou a ter mira, e a marcação passou a ter fim
 
 Primeiro uso real da marcação, segunda rodada. Duas falhas apareceram juntas: o passo da direção não desenhava nada (a seta só era desenhada para uma pose já salva, nunca para o rascunho), então não havia como ver o que se estava escolhendo; e depois do segundo clique a planta voltava sozinha a medir cotas, de modo que os cliques seguintes viravam pontos A e B sem aviso.

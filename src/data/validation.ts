@@ -82,13 +82,16 @@ function pose(value: unknown, roomId: string | null): Pose {
   };
 }
 
-function reference(value: unknown, expected: typeof original.plan, allowPose: boolean): Reference {
+// Só a identidade da referência é imutável; ambiente, pose e estado vêm do arquivo lido.
+type Identity = Pick<Reference, 'id' | 'path' | 'originalPath' | 'width' | 'height' | 'kind' | 'source'>;
+
+function reference(value: unknown, expected: Identity, allowPose: boolean): Reference {
   const r = object(value);
   for (const key of ['id', 'path', 'originalPath', 'width', 'height', 'kind', 'source'] as const) {
     if (r[key] !== expected[key]) throw new Error(`Referência ausente ou incompatível: ${expected.id} (${key}).`);
   }
   if (typeof r.observations !== 'string' || r.observations.length > 5000) throw new Error('Observação inválida (máximo 5.000 caracteres).');
-  const base = { ...expected, observations: r.observations } as Reference;
+  const base = { ...expected, observations: r.observations };
   if (!allowPose) {
     if (r.roomId !== null || r.pose !== null || r.status !== 'pendente') throw new Error('A planta não recebe ambiente, pose ou estado diferente de pendente.');
     return { ...base, roomId: null, pose: null, status: 'pendente' };
@@ -114,7 +117,7 @@ export function validateProject(value: unknown): Project {
   const photos = original.photos.map(expected => {
     const matches = (p.photos as unknown[]).filter(item => object(item).id === expected.id);
     if (matches.length !== 1) throw new Error(`Foto ausente ou duplicada: ${expected.id}.`);
-    return reference(matches[0], expected as typeof original.plan, !herdado);
+    return reference(matches[0], expected as Identity, !herdado);
   });
   let calibration: Calibration | null = null;
   if (p.calibration !== null && p.calibration !== undefined) {
@@ -127,7 +130,7 @@ export function validateProject(value: unknown): Project {
     if (origin.u !== transform.origin.u || origin.v !== transform.origin.v || Math.abs(number(supplied.metersPerPixel) - transform.metersPerPixel) > 1e-12) throw new Error('Transformação inconsistente com a medida de referência.');
     calibration = { reference: ref, check: c.check === null || c.check === undefined ? null : measurement(c.check), transform, status: 'proposto' };
   } else if (!('calibration' in p)) throw new Error('Campo de calibração ausente.');
-  return { schemaVersion: 2, units: 'm', planId: original.planId, plan: reference(p.plan, original.plan, false), photos, calibration };
+  return { schemaVersion: 2, units: 'm', planId: original.planId, plan: reference(p.plan, original.plan as Identity, false), photos, calibration };
 }
 
 export function initialProject(): Project { return validateProject(original); }

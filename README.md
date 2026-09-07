@@ -53,7 +53,7 @@ O rascunho é salvo no armazenamento local do navegador, sujeito a disponibilida
 
 ## Validação e limitações
 
-83 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera e o roteamento dos cliques da planta entre medir cota e marcar foto.
+85 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera e o roteamento dos cliques da planta entre medir cota e marcar foto.
 
 Nada foi medido no apartamento, com uma exceção: o pé-direito de 2,70 m foi confirmado pelo usuário. Espessura de parede, peitoril e altura de janela continuam estimativas globais. Todas as cotas do traçado vêm do desenho da planta, e três cômodos (BH de serviço, LAV. e HALL SOCIAL) não têm nenhum número impresso para conferir.
 
@@ -61,6 +61,6 @@ Nenhuma tela foi aberta em navegador por quem construiu: as sessões não tinham
 
 O Vite informa um chunk Three.js de aproximadamente 539 kB minificado (134 kB gzip), carregado separadamente. Não foi medido desempenho/FPS. As imagens originais somam aproximadamente 21 MB; as fotos do catálogo usam carregamento preguiçoso. Miniaturas otimizadas ficam para trabalho posterior, com identificação de derivadas.
 
-Nenhuma das 11 fotos foi associada a um ambiente ou posicionada: todas continuam `pendente`. Os nomes dos arquivos não valem como associação, e o validador exige evidência escrita para qualquer pose.
+As 11 fotos foram associadas, marcadas e confirmadas pelo usuário em 07/09/2026, cada uma com evidência escrita. A associação é humana: os nomes dos arquivos não valem como evidência e o validador recusa pose sem ela. Três ressalvas seguem abertas, listadas em `docs/10_product/MVP_ROADMAP.md`: uma evidência que contradiz o azimute, três poses a menos de 0,20 m da parede e o campo de visão vertical mantido no padrão de 55°. Nenhuma pose foi comparada com o modelo em navegador.
 
-Próximo passo: marcar as fotos, começando pela sala, e comparar cada uma com o modelo antes de confirmar.
+Próximo passo: comparar cada pose com o modelo em navegador e resolver as três ressalvas antes de tratar materiais e aparência.

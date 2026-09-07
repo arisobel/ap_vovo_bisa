@@ -84,6 +84,12 @@ function drawMarkers() {
   }
 }
 
+// O botão diz o que vai acontecer: com uma foto escolhida, o passeio começa no ponto dela.
+function rotuloPasseio(caminhando: boolean) {
+  if (caminhando) return 'Sair do passeio (Esc)';
+  return selecionada ? 'Andar a partir daqui' : 'Andar por dentro';
+}
+
 function mostrarFoto(on: boolean) {
   const photo = selecionada;
   mostrandoFoto = on && !!photo;
@@ -108,6 +114,7 @@ function selecionar(photo: Reference) {
   document.querySelectorAll<HTMLButtonElement>('.photo-card').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.id === photo.id)));
   drawMarkers();
   mostrarFoto(false);
+  el('visit-walk').textContent = rotuloPasseio(andando);
   if (project.calibration) scene?.viewFromPose(poseToWorld(pose, project.calibration.transform));
   el('visit-info').textContent = `Você está no ponto de ${title(photo)}, olhando na mesma direção da fotografia.`;
 }
@@ -136,7 +143,19 @@ for (const photo of project.photos) {
 }
 
 el('visit-photo').onclick = () => mostrarFoto(!mostrandoFoto);
-el('visit-frame').onclick = () => { mostrarFoto(false); scene?.viewFromPose(null); scene?.frame(); el('visit-info').textContent = 'Reconstruído a partir da planta e das fotografias.'; };
+el('visit-frame').onclick = () => {
+  mostrarFoto(false);
+  selecionada = null;
+  document.querySelectorAll<HTMLButtonElement>('.photo-card').forEach(b => b.setAttribute('aria-pressed', 'false'));
+  drawMarkers();
+  scene?.viewFromPose(null);
+  scene?.frame();
+  el('visit-walk').textContent = rotuloPasseio(andando);
+  el('visit-room').textContent = 'Escolha uma fotografia';
+  el('visit-photo').hidden = true;
+  el('visit-hint').textContent = 'Cada marca é uma fotografia. O leque mostra o que a câmera alcançava.';
+  el('visit-info').textContent = 'Reconstruído a partir da planta e das fotografias.';
+};
 
 Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview, pilot]) => {
   scene = preview.mountPreview(el('preview'), message => { el('visit-info').textContent = message; });
@@ -144,13 +163,23 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
     const ativo = estado !== null;
     if (ativo === andando) return;
     andando = ativo;
-    el('visit-walk').textContent = ativo ? 'Sair do passeio (Esc)' : 'Andar por dentro';
+    el('visit-walk').textContent = rotuloPasseio(ativo);
     el('visit-walk').classList.toggle('primary', !ativo);
     el('visit-info').textContent = ativo
       ? 'W A S D ou setas para andar, mouse para olhar, Shift para acelerar, Esc para sair.'
-      : 'Reconstruído a partir da planta e das fotografias.';
+      : selecionada
+        ? `Você está no ponto de ${title(selecionada)}, olhando na mesma direção da fotografia.`
+        : 'Reconstruído a partir da planta e das fotografias.';
   });
-  el('visit-walk').onclick = () => { mostrarFoto(false); andando ? scene?.exitWalk() : scene?.enterWalk(); };
+  el('visit-walk').onclick = () => {
+    if (andando) { scene?.exitWalk(); return; }
+    mostrarFoto(false);
+    // Com uma fotografia escolhida, o passeio começa no ponto dela, olhando na mesma direção.
+    const pose = selecionada?.pose && project.calibration
+      ? poseToWorld(selecionada.pose, project.calibration.transform)
+      : null;
+    scene?.enterWalk(pose);
+  };
   el('visit-furniture').onclick = () => {
     const button = el('visit-furniture');
     const com = button.getAttribute('aria-pressed') !== 'true';

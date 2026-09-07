@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
-import { barriersFrom, fixtureBlock, headingFromYaw, openingParts, poseRotation, resolveCollision, startingPoint, wallBlocks } from '../src/scene/preview';
+import { barriersFrom, fixtureBlock, headingFromYaw, openingParts, PITCH_LIMITE, poseRotation, resolveCollision, startingPoint, walkStartFromPose, wallBlocks } from '../src/scene/preview';
 import { deriveApartment, initialApartment } from '../src/data/pilot';
+import { POSE_LIMITS } from '../src/data/validation';
 import { calibrate, headingDirection, planToWorld, worldToPlan } from '../src/plan/spatial';
 
 const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
@@ -256,5 +257,39 @@ describe('mobília na cena', () => {
       const dentroZ = Math.abs(partida.z - f.center.z) < f.size.depth / 2;
       expect(dentroX && dentroZ, f.id).toBe(false);
     }
+  });
+});
+
+describe('passeio a partir de uma fotografia', () => {
+  const pose = { x: 3.1, z: -4.2, height: 1.55, headingDeg: 240, pitchDeg: -8, verticalFovDeg: 55 };
+
+  it('começa no ponto, na direção e na altura da fotografia', () => {
+    const inicio = walkStartFromPose(pose);
+    expect(inicio.x).toBe(pose.x);
+    expect(inicio.z).toBe(pose.z);
+    expect(inicio.eyeHeight).toBe(pose.height);
+    expect(inicio.yaw).toBeCloseTo(poseRotation(pose).y, 12);
+    expect(inicio.pitch).toBeCloseTo(poseRotation(pose).x, 12);
+  });
+
+  it('reproduz a mesma direção que o azimute da planta', () => {
+    for (const grau of [0, 61, 96, 152, 244, 357]) {
+      const inicio = walkStartFromPose({ ...pose, headingDeg: grau });
+      expect(headingFromYaw(inicio.yaw)).toBeCloseTo(grau, 9);
+    }
+  });
+
+  it('preserva a inclinação de qualquer pose válida, e apara só o que o contrato já recusaria', () => {
+    // POSE_LIMITS aceita de -60 a 60 graus; o passeio permite mais que isso.
+    for (const grau of [-60, -8, 0, 8, 60]) {
+      expect(walkStartFromPose({ ...pose, pitchDeg: grau }).pitch).toBeCloseTo(grau * Math.PI / 180, 12);
+    }
+    expect(POSE_LIMITS.pitchDeg[1] * Math.PI / 180).toBeLessThan(PITCH_LIMITE);
+    // A aparagem é defensiva: só age em valor que o validador nunca deixaria passar.
+    expect(walkStartFromPose({ ...pose, pitchDeg: 120 }).pitch).toBeCloseTo(PITCH_LIMITE, 12);
+  });
+
+  it('não leva o campo de visão da fotografia para o passeio', () => {
+    expect(Object.keys(walkStartFromPose(pose))).not.toContain('verticalFovDeg');
   });
 });

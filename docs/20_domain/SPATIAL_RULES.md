@@ -14,4 +14,5 @@ Fonte normativa: PRD, seção 6. Implementação F0: `src/plan/spatial.ts`.
 - Câmera da pose no Three.js: rotação `YXZ` com `y = −azimute` em radianos e `x = inclinação`. Isso reproduz a direção `(sin a, 0, −cos a)` da regra de azimute, e há teste que compara as duas.
 - Altura de parede é parâmetro nomeado, nunca número solto: cada parede aponta para `wallHeight` (2,70 m, confirmado) ou `railingHeight` (1,10 m, estimado). Ausente vale `wallHeight`. Um vão é conferido contra a altura da parede que o recebe, não contra o pé-direito.
 - Posição do passeio na planta: `worldToPlan` com a mesma transformação das paredes, e `headingFromYaw` para o azimute — inversa exata de `poseRotation`, com teste de ida e volta.
+- Passeio iniciado a partir de uma fotografia: mesmo ponto, mesmo azimute e mesma altura de olho da pose, com `walkStartFromPose`. O campo de visão não vai junto — ele é da fotografia, não de quem caminha. A colisão vale na entrada, então uma pose rente à parede começa empurrada para fora.
 - Nenhuma pose é inferida automaticamente. Toda pose nasce de marcação humana na planta, com evidência escrita e confiança declarada.

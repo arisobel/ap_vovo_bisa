@@ -1,5 +1,21 @@
 # Progresso
 
+## 07/09/2026 — O passeio começa de onde a fotografia foi tirada
+
+Primeiro deploy feito pelo usuário, com a visita na raiz do site. O pedido seguinte veio de usar: alternando entre a fotografia e o modelo, clicar em andar por dentro deveria continuar dali, e não saltar para o ponto de partida no meio da sala.
+
+`enterWalk` passou a aceitar uma pose. `walkStartFromPose` é pura e testada: leva ponto, azimute e altura de olho da fotografia, e **não** leva o campo de visão, que é da câmera fotográfica e não de quem caminha. A altura de olho deixou de ser constante durante o passeio; entrando de uma pose, anda-se a 1,55 m em vez de 1,60 m, que é a altura declarada naquela fotografia.
+
+Sair do passeio devolve à vista da fotografia, em vez de reenquadrar o apartamento inteiro — o caminho de volta é o mesmo da ida.
+
+A colisão vale na entrada. Três poses estão a menos de 0,20 m da parede e o raio do corpo é 0,28 m: sem isso, o passeio começaria dentro da alvenaria.
+
+Um teste que escrevi errado revelou um fato melhor que a suposição: eu esperava que a inclinação da pose fosse aparada pelo limite do passeio, e não é. O contrato aceita de −60 a 60 graus, e o passeio permite mais que isso, então **nenhuma pose válida é distorcida ao entrar**. O teste agora afirma essa relação entre os dois limites, em vez de afirmar uma aparagem que não acontece.
+
+O botão diz o que vai fazer: com uma fotografia escolhida, vira "Andar a partir daqui". O mesmo vale no editor, ao comparar uma pose com o modelo.
+
+121 testes passam; TypeScript e build limpos. Nada foi aberto em navegador por quem construiu.
+
 ## 07/09/2026 — Tela de visita e publicação estática no CapRover
 
 O usuário pediu uma tela para o público, sem controles de gravação, e deploy no CapRover. A proibição de publicar vinha do escopo da F0 e foi levantada por ele; AGENTS.md e AGENT_SKILL_PROJECT.md registram a mudança e o que continua valendo — sem backend, banco, autenticação, React ou IA.

@@ -19,7 +19,7 @@ export type PreviewHandle = {
   setWallsVisible(visible: boolean): void;
   lookFromTop(): void;
   frame(): void;
-  enterWalk(): void;
+  enterWalk(from?: PoseView | null): void;
   exitWalk(): void;
   viewFromPose(pose: PoseView | null): void;
   setPalette(mode: PaletteMode): void;
@@ -127,6 +127,22 @@ export function wallBlocks(wall: SceneWall): WallBlock[] {
 }
 
 export type PoseView = { x: number; z: number; height: number; headingDeg: number; pitchDeg: number; verticalFovDeg: number };
+
+// Limite de inclinação do passeio, em radianos. Uma pose muito inclinada é aparada aqui,
+// e não silenciosamente ignorada: quem anda não deve nascer olhando para trás por cima.
+export const PITCH_LIMITE = 1.2;
+
+// Estado inicial do passeio a partir de uma pose fotográfica: mesmo ponto, mesma direção,
+// mesma altura de olho. O campo de visão não vem junto — ele é da fotografia, não de quem anda.
+export function walkStartFromPose(pose: PoseView) {
+  return {
+    x: pose.x,
+    z: pose.z,
+    eyeHeight: pose.height,
+    yaw: -pose.headingDeg * Math.PI / 180,
+    pitch: Math.max(-PITCH_LIMITE, Math.min(PITCH_LIMITE, pose.pitchDeg * Math.PI / 180)),
+  };
+}
 
 // Rotação da câmera para um azimute da planta, na ordem YXZ do Three.js.
 // Azimute 0 aponta ao topo da planta (-Z), 90 à direita (+X), como manda SPATIAL_RULES.
@@ -309,6 +325,8 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
   let partida: Ponto | null = null;
   let andando = false;
   let emPose = false;
+  let alturaOlhos = ALTURA_OLHOS;
+  let poseDeOrigem: PoseView | null = null;
   let avisarPasseio: (state: WalkState | null) => void = () => {};
   let ultimo: WalkState | null = null;
 
@@ -431,7 +449,7 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
 
   function olhar(dx: number, dy: number) {
     yaw -= dx * .0026;
-    pitch = Math.max(-1.2, Math.min(1.2, pitch - dy * .0026));
+    pitch = Math.max(-PITCH_LIMITE, Math.min(PITCH_LIMITE, pitch - dy * .0026));
   }
   const aoMover = (event: MouseEvent) => { if (andando) olhar(event.movementX, event.movementY); };
   const aoTeclar = (event: KeyboardEvent) => {
@@ -463,19 +481,31 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
       camera.position.z = livre.z;
     }
     camera.rotation.set(pitch, yaw, 0, 'YXZ');
-    camera.position.y = ALTURA_OLHOS;
+    camera.position.y = alturaOlhos;
     avisarPosicao();
     render();
   }
 
-  function enterWalk() {
-    if (andando || !partida) return;
+  function enterWalk(from?: PoseView | null) {
+    if (andando || (!partida && !from)) return;
     andando = true;
     controls.enabled = false;
-    const inicio = resolveCollision(partida.x, partida.z, RAIO_CORPO, barreiras);
-    camera.position.set(inicio.x, ALTURA_OLHOS, inicio.z);
-    yaw = 0; pitch = 0;
-    camera.rotation.set(0, 0, 0, 'YXZ');
+    // Entrando de uma fotografia, o passeio começa exatamente onde ela foi tirada.
+    // Sair do passeio devolve à mesma vista, em vez de reenquadrar o apartamento inteiro.
+    poseDeOrigem = from ?? null;
+    const inicial = from
+      ? walkStartFromPose(from)
+      : { x: partida!.x, z: partida!.z, eyeHeight: ALTURA_OLHOS, yaw: 0, pitch: 0 };
+    alturaOlhos = inicial.eyeHeight;
+    // Mesmo vindo de uma pose, a colisão vale: poses marcadas rentes à parede seriam
+    // um começo dentro da alvenaria.
+    const inicio = resolveCollision(inicial.x, inicial.z, RAIO_CORPO, barreiras);
+    camera.position.set(inicio.x, alturaOlhos, inicio.z);
+    yaw = inicial.yaw; pitch = inicial.pitch;
+    emPose = false;
+    camera.fov = 42;
+    camera.updateProjectionMatrix();
+    camera.rotation.set(pitch, yaw, 0, 'YXZ');
     teclas.clear();
     window.addEventListener('keydown', aoTeclar);
     window.addEventListener('keyup', aoSoltar);
@@ -500,8 +530,12 @@ export function mountPreview(host: HTMLElement, report: (message: string) => voi
     if (document.pointerLockElement === tela) document.exitPointerLock?.();
     controls.enabled = true;
     ultimo = null;
+    alturaOlhos = ALTURA_OLHOS;
     avisarPasseio(null);
-    frame();
+    const volta = poseDeOrigem;
+    poseDeOrigem = null;
+    if (volta) viewFromPose(volta);
+    else frame();
   }
 
   const observer = new ResizeObserver(() => {

@@ -423,7 +423,14 @@ Promise.all([import('./scene/preview'), import('./data/pilot')]).then(([preview,
       ? 'Passeio: W A S D ou setas para andar, mouse para olhar, Shift para acelerar, Esc para sair. Olhos a 1,60 m do piso. A seta laranja na planta mostra onde você está e para onde olha.'
       : sceneInfo;
   });
-  el('scene-walk').onclick = () => (walking ? scene?.exitWalk() : scene?.enterWalk());
+  el('scene-walk').onclick = () => {
+    if (walking) { scene?.exitWalk(); return; }
+    // Comparando uma pose, o passeio começa no ponto da própria fotografia.
+    const pose = comparing && selectedPhoto?.pose && project.calibration
+      ? poseToWorld(selectedPhoto.pose, project.calibration.transform)
+      : null;
+    scene?.enterWalk(pose);
+  };
   el('scene-frame').onclick = () => scene?.frame();
   el('scene-top').onclick = () => scene?.lookFromTop();
   el('scene-furniture').onclick = () => {

@@ -41,7 +41,7 @@ O rascunho é salvo no armazenamento local do navegador, sujeito a disponibilida
 
 `index.html` é o **editor**: calibração, marcação de poses, importação e exportação. É a ferramenta de trabalho e continua local.
 
-`visita.html` é a **visita**: só leitura. Clicar numa fotografia acende o ponto de onde ela foi tirada — um leque mostrando o alcance da câmera, uma seta na direção do olhar e um anel que pulsa — e leva a câmera 3D ao mesmo ponto. Dá para alternar entre a fotografia e o modelo visto dali, andar por dentro e ver o apartamento com ou sem mobília. Não há nada que grave parâmetro, e a visita não lê o rascunho do navegador: ela usa os arquivos versionados, então todo visitante vê o mesmo.
+`visita.html` é a **visita**: só leitura. Clicar numa fotografia acende o ponto de onde ela foi tirada — um leque mostrando o alcance da câmera, uma seta na direção do olhar e um anel que pulsa — e leva a câmera 3D ao mesmo ponto. Dá para alternar entre a fotografia e o modelo visto dali. Com uma fotografia escolhida, o botão vira **Andar a partir daqui**: o passeio começa exatamente no ponto e na direção dela, e sair do passeio devolve à mesma vista. Sem fotografia escolhida, o passeio começa no meio da sala, como antes. Não há nada que grave parâmetro, e a visita não lê o rascunho do navegador: ela usa os arquivos versionados, então todo visitante vê o mesmo.
 
 Em desenvolvimento, a visita fica em `/visita.html`. Na imagem publicada, ela é a página inicial.
 
@@ -78,7 +78,7 @@ Para conferir o pacote antes de publicar: `tar -tzf dep\<arquivo>.tar.gz`.
 
 ## Validação e limitações
 
-117 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera nos dois sentidos, a posição do passeio de volta na planta o roteamento dos cliques entre medir cota e marcar foto, os acabamentos e esquadrias, a mobília com sua colisão condicional, e o setor de visão desenhado na tela de visita.
+121 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera nos dois sentidos, a posição do passeio de volta na planta o roteamento dos cliques entre medir cota e marcar foto, os acabamentos e esquadrias, a mobília com sua colisão condicional, o setor de visão desenhado na tela de visita, e a entrada do passeio a partir de uma pose.
 
 Nada foi medido no apartamento, com uma exceção: o pé-direito de 2,70 m foi confirmado pelo usuário. Os três fechamentos do terraço sobem 1,10 m por serem gradil, tipo de fechamento confirmado pelo usuário; a altura em si é a usual de guarda-corpo e continua estimada, e o desenho é um parapeito maciço, sem os vazios. Espessura de parede, peitoril e altura de janela continuam estimativas globais.
 

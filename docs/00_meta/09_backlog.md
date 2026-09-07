@@ -23,6 +23,7 @@
 ## F3 / F4
 - Passeio e colisão implementados; falta revisar em navegador e sincronizar a posição do caminhante com a planta 2D.
 - Modelar folha de porta ou marcar visualmente o vão: hoje todo vão é atravessável.
-- Altura por parede, para o gradil do terraço não subir 2,70 m. O usuário já confirmou que é gradil de cerca de 1,10 m.
+- Vazios do gradil: hoje o guarda-corpo do terraço é um parapeito maciço de 1,10 m. Desenhar os montantes exige geometria de balaústre, não só altura, e cabe junto com materiais na F4.
+- Medir no local a altura do gradil, a espessura de parede, o peitoril e a altura de janela. `railingHeight` é a segunda altura do projeto e continua estimada.
 - Materiais/objetos fixos após validação estrutural.
 - Medir desempenho, custo de imagens e bundle; considerar miniaturas derivadas preservando originais.

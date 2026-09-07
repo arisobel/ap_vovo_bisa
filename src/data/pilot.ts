@@ -3,9 +3,13 @@ import { pixelDistance, planToWorld, type Point, type Transform } from '../plan/
 
 export type ParameterStatus = 'estimado' | 'confirmado';
 export type Parameter = { value: number; status: ParameterStatus; evidence: string };
-export type ParameterName = 'wallHeight' | 'wallThickness' | 'doorHeight' | 'windowBase' | 'windowHeight';
+export type ParameterName = 'wallHeight' | 'railingHeight' | 'wallThickness' | 'doorHeight' | 'windowBase' | 'windowHeight';
+// Alturas que uma parede pode assumir. A parede escolhe um parâmetro nomeado, nunca um número solto:
+// altura é estimativa com evidência, e mudar a estimativa tem de mudar todas as paredes de uma vez.
+export type WallHeightParameter = 'wallHeight' | 'railingHeight';
+export const wallHeightParameters: WallHeightParameter[] = ['wallHeight', 'railingHeight'];
 export type Parameters = Record<ParameterName, Parameter>;
-export type Wall = { id: string; edge: number; evidence: string };
+export type Wall = { id: string; edge: number; heightParameter: WallHeightParameter; evidence: string };
 export type Opening = { id: string; wallId: string; type: 'door' | 'window'; offsetPixels: number; widthPixels: number; base: 0 | 'windowBase'; heightParameter: 'doorHeight' | 'windowHeight'; status: 'proposto'; evidence: string };
 export type Confidence = 'alta' | 'media';
 export type Check = { id: string; kind: 'length' | 'area'; printed: number; pixels: number; confidence: Confidence; evidence: string };
@@ -14,7 +18,7 @@ export const checkTolerance: Record<Confidence, number> = { alta: 1.5, media: 3.
 export type Verification = 'cota-impressa' | 'sem-cota';
 export type Room = { id: string; name: string; status: 'proposto'; verification: Verification; evidence: string; contour: Point[]; walls: Wall[]; openings: Opening[]; checks: Check[] };
 export type Apartment = { schemaVersion: 2; planId: string; planWidth: number; planHeight: number; convention: string; parameters: Parameters; rooms: Room[] };
-export const parameterNames: ParameterName[] = ['wallHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight'];
+export const parameterNames: ParameterName[] = ['wallHeight', 'railingHeight', 'wallThickness', 'doorHeight', 'windowBase', 'windowHeight'];
 function assert(condition: unknown, message: string): asserts condition { if (!condition) throw new Error(`Estrutura: ${message}`); }
 const record = (v: unknown): Record<string, any> => { assert(v && typeof v === 'object' && !Array.isArray(v), 'objeto inválido.'); return v as Record<string, any>; };
 const finite = (v: unknown, min: number, max: number) => typeof v === 'number' && Number.isFinite(v) && v >= min && v <= max;
@@ -69,7 +73,11 @@ function validateRoom(value: unknown, parameters: Parameters, planWidth: number,
     const w = record(item);
     assert(identifier(w.id) && !ids.has(w.id), 'ID de parede inválido/duplicado.');
     assert(Number.isInteger(w.edge) && w.edge >= 0 && w.edge < contour.length && !edges.has(w.edge) && evidence(w.evidence), 'aresta/evidência da parede inválida.');
-    ids.add(w.id); edges.add(w.edge); return { id: w.id as string, edge: w.edge as number, evidence: w.evidence as string };
+    // Ausente significa parede de pé-direito: os arquivos anteriores continuam válidos.
+    const heightParameter = (w.heightParameter ?? 'wallHeight') as WallHeightParameter;
+    assert(wallHeightParameters.includes(heightParameter), `altura de parede desconhecida em ${w.id}: ${String(w.heightParameter)}.`);
+    assert(parameters.railingHeight.value <= parameters.wallHeight.value, 'guarda-corpo mais alto que o pé-direito.');
+    ids.add(w.id); edges.add(w.edge); return { id: w.id as string, edge: w.edge as number, heightParameter, evidence: w.evidence as string };
   });
   assert(Array.isArray(p.openings) && p.openings.length <= 64, 'aberturas inválidas.');
   const openingIds = new Set<string>();
@@ -84,7 +92,8 @@ function validateRoom(value: unknown, parameters: Parameters, planWidth: number,
     assert(o.type === 'door' ? o.base === 0 && o.heightParameter === 'doorHeight' : o.base === 'windowBase' && o.heightParameter === 'windowHeight', 'base/altura incompatível com o tipo.');
     const base = o.base === 0 ? 0 : parameters.windowBase.value;
     const height = parameters[o.heightParameter as 'doorHeight' | 'windowHeight'].value;
-    assert(base + height <= parameters.wallHeight.value, 'abertura excede a altura da parede.');
+    // Contra a altura DESTA parede: um guarda-corpo de 1,10 m não comporta uma porta de 2,10 m.
+    assert(base + height <= parameters[wall!.heightParameter].value, `abertura ${o.id} excede a altura da parede ${wall!.id}.`);
     return { id: o.id, wallId: o.wallId, type: o.type, offsetPixels: o.offsetPixels, widthPixels: o.widthPixels, base: o.base, heightParameter: o.heightParameter, status: 'proposto', evidence: o.evidence };
   });
   for (const wall of walls) {
@@ -171,7 +180,8 @@ export function deriveRoom(room: Room, parameters: Parameters, transform: Transf
     const start = contour[w.edge], end = contour[(w.edge + 1) % contour.length];
     const length = Math.hypot(end.x - start.x, end.z - start.z);
     const openings = room.openings.filter(o => o.wallId === w.id).map(o => ({ ...o, offset: o.offsetPixels * transform.metersPerPixel, width: o.widthPixels * transform.metersPerPixel, base: o.base === 0 ? 0 : parameters.windowBase.value, height: parameters[o.heightParameter].value }));
-    return { id: w.id, start, end, length, height: parameters.wallHeight.value, thickness: parameters.wallThickness.value, openings, pieces: wallPieces(length, parameters.wallHeight.value, openings) };
+    const height = parameters[w.heightParameter].value;
+    return { id: w.id, start, end, length, height, heightParameter: w.heightParameter, thickness: parameters.wallThickness.value, openings, pieces: wallPieces(length, height, openings) };
   });
   const checks = room.checks.map(c => ({ ...c, ...checkDeviation(c, transform) }));
   return { id: room.id, name: room.name, verification: room.verification, contour, walls, checks };

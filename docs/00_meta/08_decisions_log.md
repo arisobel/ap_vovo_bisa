@@ -38,6 +38,16 @@ A colisão do passeio é derivada de `wallBlocks`, a mesma função que desenha 
 ## D012 — 06/09/2026 — Pose em pixels da planta, não em metros
 O PRD lista `x, z` na pose fotográfica. O contrato guarda `u, v` em pixels e deriva o mundo com a mesma transformação das paredes. Motivo: a origem métrica é o ponto A da calibração, então gravar metros amarraria toda pose a uma calibração específica, e recalibrar deixaria as fotos para trás enquanto a geometria se move. Em pixels, pose e paredes acompanham qualquer recalibração juntas. `poseToWorld` faz a conversão num lugar só.
 
+## D015 - Altura de parede é parâmetro nomeado, não número por parede (07/09/2026)
+
+O terraço precisava de guarda-corpo mais baixo que o pé-direito. Havia duas formas: um campo `height` livre em cada parede, ou a parede escolher entre parâmetros nomeados.
+
+Decisao: `Wall.heightParameter` aponta para `wallHeight` ou `railingHeight`, ambos com valor, estado e evidência no topo do arquivo. Nenhum número solto entra na geometria. Corrigir a estimativa de 1,10 m depois de medir no local muda um lugar e move os três fechamentos juntos, e o estado `estimado` continua visível em vez de se perder dentro de uma parede.
+
+Ausência do campo significa `wallHeight`, então os arquivos anteriores seguem válidos. O validador recusa altura desconhecida, guarda-corpo mais alto que o pé-direito, e vão mais alto que a parede que o recebe - a porta de 2,10 m deixou de caber no gradil de 1,10 m, e isso é testado.
+
+Alternativa descartada: altura livre por parede. Daria liberdade para inventar 1,12 aqui e 1,08 ali sem evidência, que e exatamente o que este projeto tenta evitar.
+
 ## D014 - A planta tem um modo por vez (06/09/2026)
 
 A mesma superfície serve a duas tarefas: medir cotas (pontos A e B) e marcar a pose de uma foto (ponto e direcao). Na primeira versao da F2 os dois desenhos conviviam na tela e um clique fora de hora comecava uma nova cota sem aviso, o que confundiu a marcacao logo no primeiro uso real.

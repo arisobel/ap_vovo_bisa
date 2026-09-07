@@ -141,3 +141,21 @@ describe('câmera na pose da fotografia', () => {
     expect(poseRotation({ headingDeg: 0, pitchDeg: 20 }).x).toBeGreaterThan(0);
   });
 });
+
+describe('gradil do terraço', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+  const terraco = deriveApartment(initialApartment(), transform).find(r => r.id === 'terraco')!;
+
+  it('desenha o guarda-corpo baixo, não uma parede de pé-direito', () => {
+    const leste = terraco.walls.find(w => w.id === 'terraco-leste')!;
+    const blocos = wallBlocks(leste);
+    expect(blocos).toHaveLength(1);
+    expect(blocos[0].size[1]).toBeCloseTo(1.1, 9);
+    expect(blocos[0].position[1]).toBeCloseTo(0.55, 9);
+  });
+
+  it('continua barrando quem caminha, apesar de baixo', () => {
+    const gradil = terraco.walls.filter(w => w.id !== 'terraco-norte');
+    expect(barriersFrom([{ ...terraco, walls: gradil }])).toHaveLength(3);
+  });
+});

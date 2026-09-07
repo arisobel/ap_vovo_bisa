@@ -53,9 +53,9 @@ O rascunho é salvo no armazenamento local do navegador, sujeito a disponibilida
 
 ## Validação e limitações
 
-85 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera e o roteamento dos cliques da planta entre medir cota e marcar foto.
+92 testes automatizados passaram, assim como TypeScript e build. Eles cobrem escala, contrato dos dados, poses fotográficas e migração da versão 1, traçado dos 16 cômodos contra as cotas impressas da planta, sobreposição entre cômodos, recorte de vãos nas paredes, colisão do passeio, a convenção de azimute da câmera e o roteamento dos cliques da planta entre medir cota e marcar foto.
 
-Nada foi medido no apartamento, com uma exceção: o pé-direito de 2,70 m foi confirmado pelo usuário. Espessura de parede, peitoril e altura de janela continuam estimativas globais. Todas as cotas do traçado vêm do desenho da planta, e três cômodos (BH de serviço, LAV. e HALL SOCIAL) não têm nenhum número impresso para conferir.
+Nada foi medido no apartamento, com uma exceção: o pé-direito de 2,70 m foi confirmado pelo usuário. Os três fechamentos do terraço sobem 1,10 m por serem gradil, tipo de fechamento confirmado pelo usuário; a altura em si é a usual de guarda-corpo e continua estimada, e o desenho é um parapeito maciço, sem os vazios. Espessura de parede, peitoril e altura de janela continuam estimativas globais. Todas as cotas do traçado vêm do desenho da planta, e três cômodos (BH de serviço, LAV. e HALL SOCIAL) não têm nenhum número impresso para conferir.
 
 Nenhuma tela foi aberta em navegador por quem construiu: as sessões não tinham navegador conectado. Aparência, desempenho e o passeio dependem de revisão humana.
 

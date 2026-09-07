@@ -1,5 +1,19 @@
 # Progresso
 
+## 07/09/2026 — O terraço deixou de ser cercado por paredes de 2,70 m
+
+O usuário observou em 06/09/2026, ao rever a cena, que os três fechamentos do terraço são gradil e não parede. A correção ficou pendente porque a altura era global; agora não é mais.
+
+`Wall.heightParameter` aponta para um parâmetro nomeado — `wallHeight` (2,70 m, confirmado) ou `railingHeight` (1,10 m, estimado) —, nunca para um número solto (D015). Os três fechamentos do terraço passaram a `railingHeight`; a face norte continua sendo a fachada do LIVING, com o acesso envidraçado, e segue no pé-direito. Campo ausente vale `wallHeight`, então nada do que já existia mudou de altura.
+
+O validador ganhou três recusas, todas testadas: altura de parede desconhecida, guarda-corpo mais alto que o pé-direito, e vão mais alto que a parede que o recebe — a porta de 2,10 m deixou de caber no gradil de 1,10 m. Os guarda-corpos continuam barrando quem caminha, apesar de baixos.
+
+O que foi corrigido é a **altura**. A aparência não: o gradil é desenhado como parapeito maciço, sem vazios, e 1,10 m é altura usual de guarda-corpo, não medida no local. O que o usuário confirmou é o tipo de fechamento.
+
+92 testes passam; TypeScript e build limpos. Conferido também em render próprio a partir da geometria exportada pelo código do app.
+
+Próximo passo: comparar as poses com o modelo em navegador e resolver as três ressalvas da F2.
+
 ## 07/09/2026 — F2 concluída: as 11 fotografias marcadas e confirmadas
 
 O usuário associou, marcou e confirmou as 11 fotografias, cada uma com evidência escrita, e versionou `src/data/project.json`. Sete foram marcadas do cômodo vizinho olhando para dentro do alvo — a pose registra onde a câmera estava, não o que a foto mostra, e o validador impõe isso ao exigir que o ponto caia dentro do cômodo declarado.

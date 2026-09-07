@@ -149,3 +149,52 @@ describe('recorte métrico de vãos', () => {
     expect(() => wallPieces(2, 2.7, [{ offset: 1.5, width: 1, base: 0, height: 2.1 }])).toThrow();
   });
 });
+
+describe('altura por parede', () => {
+  const transform = calibrate({ points: [{ u: 52, v: 761 }, { u: 395, v: 761 }], distanceMeters: 9.12 });
+  const gradil = ['terraco-leste', 'terraco-sul', 'terraco-oeste'];
+
+  it('levanta os fechamentos do terraço na altura de guarda-corpo, e só eles', () => {
+    const apartment = initialApartment();
+    const { railingHeight, wallHeight } = apartment.parameters;
+    expect(railingHeight.value).toBeLessThan(wallHeight.value);
+    expect(railingHeight.status).toBe('estimado');
+    for (const room of apartment.rooms) {
+      const derived = deriveRoom(room, apartment.parameters, transform);
+      for (const wall of derived.walls) {
+        const esperado = gradil.includes(wall.id) ? railingHeight.value : wallHeight.value;
+        expect(wall.height, `${wall.id}`).toBeCloseTo(esperado, 9);
+        for (const peca of wall.pieces) expect(peca.base + peca.height).toBeLessThanOrEqual(esperado + 1e-9);
+      }
+    }
+  });
+
+  it('recusa vão mais alto que a parede que o recebe', () => {
+    const apartment = structuredClone(initialApartment()) as any;
+    const terraco = apartment.rooms.find((r: any) => r.id === 'terraco');
+    // A porta do terraço tem 2,10 m: no gradil de 1,10 m ela não cabe.
+    terraco.openings[0].wallId = 'terraco-leste';
+    terraco.openings[0].offsetPixels = 5;
+    terraco.openings[0].widthPixels = 20;
+    expect(() => validateApartment(apartment)).toThrow(/excede a altura da parede/);
+  });
+
+  it('recusa guarda-corpo mais alto que o pé-direito', () => {
+    const apartment = structuredClone(initialApartment()) as any;
+    apartment.parameters.railingHeight.value = 2.9;
+    expect(() => validateApartment(apartment)).toThrow(/mais alto que o pé-direito/);
+  });
+
+  it('recusa altura de parede inventada', () => {
+    const apartment = structuredClone(initialApartment()) as any;
+    apartment.rooms[0].walls[0].heightParameter = 'alturaQualquer';
+    expect(() => validateApartment(apartment)).toThrow(/altura de parede desconhecida/);
+  });
+
+  it('trata parede sem altura declarada como pé-direito, preservando arquivos anteriores', () => {
+    const apartment = structuredClone(initialApartment()) as any;
+    for (const room of apartment.rooms) for (const wall of room.walls) delete wall.heightParameter;
+    const validado = validateApartment(apartment);
+    expect(validado.rooms.every(r => r.walls.every(w => w.heightParameter === 'wallHeight'))).toBe(true);
+  });
+});
